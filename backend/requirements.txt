@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pydantic-settings
+python-dotenv
+agno
+anthropic
+slowapi
+yfinance
