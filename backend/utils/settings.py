@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     # API key for Anthropic Claude API authentication
     ANTHROPIC_API_KEY: str
 
+    NEWSAPI_KEY: str
+
+    MARKETAUX_API_KEY: str
+
+
+
 
 # Global settings instance used throughout the application
 # This is initialized when the module is imported and reads from .env/environment

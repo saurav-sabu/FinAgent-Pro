@@ -9,8 +9,15 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
 
-from backend.agent.schemas import HealthResponse, QueryRequest, QueryResponse
+from backend.agent.schemas import (
+    HealthResponse,
+    NewsRegion,
+    NewsResponse,
+    QueryRequest,
+    QueryResponse,
+)
 from backend.utils.logger import logger
+from backend.services.news_service import news_service
 
 router = APIRouter()
 
@@ -74,3 +81,35 @@ async def analyze(request: Request, body: QueryRequest) -> QueryResponse:
 
     logger.info("Analysis request completed successfully.")
     return QueryResponse(query=body.query, response=result)
+
+
+
+@router.get(
+    "/news",
+    response_model=NewsResponse,
+    tags=["Market Latest News"],
+    summary="Get latest market news",
+    response_description="Latest news items for the requested region and optional ticker",
+)
+async def get_latest_market_news(
+    request: Request,
+    region: NewsRegion = NewsRegion.GLOBAL,
+    ticker: Optional[str] = None,
+    limit: int = 10,
+) -> NewsResponse:
+    """
+    Fetch latest stock market news for a given region and optional ticker symbol.
+
+    Query parameters:
+    - `region`: NewsRegion enum (US, INDIA, GLOBAL)
+    - `ticker`: Optional stock ticker (e.g., AAPL) to filter news
+    - `limit`: Maximum number of news items to return (default 10)
+    """
+    logger.info(f"Fetching news for region={region}, ticker={ticker}, limit={limit}")
+    news_items = await news_service.get_market_news(region, ticker, limit)
+
+    return NewsResponse(
+        region=region,
+        items=news_items,
+        total_results=len(news_items),
+    )

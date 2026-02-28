@@ -7,6 +7,9 @@ This module defines the data structures used for:
 """
 
 from pydantic import BaseModel, Field
+from enum import Enum
+from typing import List, Optional
+from datetime import datetime
 
 
 class QueryRequest(BaseModel):
@@ -56,3 +59,34 @@ class HealthResponse(BaseModel):
     """
     status: str
     agent_ready: bool
+
+
+class NewsRegion(str,Enum):
+    US = "US"
+    INDIA = "INDIA"
+    GLOBAL = "GLOBAL"
+
+class NewsItem(BaseModel):
+    title: str
+    description: Optional[str] = None
+    url: str
+    source: str
+    published_date: datetime
+    tickers: List[str] = Field(
+        default_factory=list,
+        description="Related stock tickers, if available",
+    )
+    sentiment: Optional[str] = Field(
+        default=None,
+        description="Optional sentiment label: Positive, Negative, or Neutral",
+    )
+
+class NewsResponse(BaseModel):
+    region: NewsRegion
+    items: List[NewsItem]
+    total_results: int
+
+class NewsFilterRequest(BaseModel):
+    region: NewsRegion = Field(default=NewsRegion.GLOBAL,description="Filter news by region")
+    ticker: Optional[str] = Field(None,description="Stock Ticker Symbol (eg. AAPL)")
+    limit: int = Field(default=10,ge=1,le=50)
