@@ -1,3 +1,11 @@
+"""
+Constants module for FinAgent-Pro.
+
+Contains system-wide constants including AI agent instructions and configuration values.
+"""
+
+# System prompt/instructions for the Finance Agent AI model
+# This defines the agent's role, capabilities, and output format expectations
 FINANCE_AGENT_INSTRUCTIONS = """
 You are an expert Financial Market Analyst with deep expertise in:
 - Stock market analysis and technical indicators
