@@ -45,21 +45,22 @@ async def health_check() -> HealthResponse:
     return HealthResponse(status="ok", agent_ready=agent is not None)
 
 
-@router.post("/analyze", response_model=QueryResponse, tags=["Analysis"])
+@router.post(
+    "/analyze",
+    response_model=QueryResponse,
+    tags=["Analysis"],
+    summary="Analyze a financial query",
+    response_description="AI-generated analysis for the given query",
+)
 async def analyze(request: Request, body: QueryRequest) -> QueryResponse:
     """
     Analyze a financial query using the injected FinanceAgent.
 
-    Args:
-        request (Request): Incoming FastAPI request object (reserved for future use,
-                           e.g., logging or correlation IDs).
-        body (QueryRequest): Validated request body containing the user query.
+    **Request body (JSON):** `{"query": "Analyze AAPL"}` — must be JSON with a `query` field (1–1000 chars).
 
-    Returns:
-        QueryResponse: Contains the original query and the AI-generated analysis.
+    **Returns:** `{"query": "...", "response": "..."}` with the analysis text.
 
-    Raises:
-        HTTPException: If the finance agent has not yet been initialized.
+    Raises **503** if the agent is not yet initialized; **422** if body is missing or invalid.
     """
     if agent is None:
         logger.error("Analysis requested but agent is not initialized.")

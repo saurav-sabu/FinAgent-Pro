@@ -46,8 +46,12 @@ class FinanceAgent:
         model_id = model_id or settings.MODEL_ID
         temperature = temperature if temperature is not None else settings.TEMPERATURE
 
-        # Initialize Claude model with specified ID and temperature
-        self.model = Claude(id=model_id, temperature=temperature)
+        # Initialize Claude model with API key from settings (required for Anthropic auth)
+        self.model = Claude(
+            id=model_id,
+            temperature=temperature,
+            api_key=settings.ANTHROPIC_API_KEY,
+        )
         
         # Initialize yfinance tools for fetching stock market data
         self.yfinance = YFinanceTools()
