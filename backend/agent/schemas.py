@@ -1,15 +1,16 @@
 """
 Pydantic schemas for API request and response models.
 
-This module defines the data structures used for:
-- API request validation (QueryRequest)
-- API response formatting (QueryResponse, HealthResponse)
+Defines data structures for:
+- Finance: QueryRequest, QueryResponse, HealthResponse
+- News: NewsRegion, NewsItem, NewsResponse, NewsFilterRequest
 """
 
-from pydantic import BaseModel, Field
+from datetime import datetime
 from enum import Enum
 from typing import List, Optional
-from datetime import datetime
+
+from pydantic import BaseModel, Field
 
 
 class QueryRequest(BaseModel):
@@ -61,12 +62,19 @@ class HealthResponse(BaseModel):
     agent_ready: bool
 
 
-class NewsRegion(str,Enum):
+class NewsRegion(str, Enum):
+    """Region filter for market news: US, India, or global."""
+
     US = "US"
     INDIA = "INDIA"
     GLOBAL = "GLOBAL"
 
+
 class NewsItem(BaseModel):
+    """
+    Single news article with citation fields (url, source, published_date).
+    """
+
     title: str
     description: Optional[str] = None
     url: str
@@ -81,12 +89,20 @@ class NewsItem(BaseModel):
         description="Optional sentiment label: Positive, Negative, or Neutral",
     )
 
+
 class NewsResponse(BaseModel):
+    """Paginated news response with region, items list, and total count."""
+
     region: NewsRegion
     items: List[NewsItem]
     total_results: int
 
+
 class NewsFilterRequest(BaseModel):
-    region: NewsRegion = Field(default=NewsRegion.GLOBAL,description="Filter news by region")
-    ticker: Optional[str] = Field(None,description="Stock Ticker Symbol (eg. AAPL)")
-    limit: int = Field(default=10,ge=1,le=50)
+    """Request body or query params for filtering news by region, ticker, and limit."""
+
+    region: NewsRegion = Field(
+        default=NewsRegion.GLOBAL, description="Filter news by region"
+    )
+    ticker: Optional[str] = Field(None, description="Stock ticker symbol (e.g. AAPL)")
+    limit: int = Field(default=10, ge=1, le=50)

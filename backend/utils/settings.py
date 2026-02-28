@@ -42,8 +42,10 @@ class Settings(BaseSettings):
     # API key for Anthropic Claude API authentication
     ANTHROPIC_API_KEY: str
 
+    # NewsAPI key (https://newsapi.org) — used for India region news
     NEWSAPI_KEY: str
 
+    # MarketAux API token (https://marketaux.com) — used for US/global news
     MARKETAUX_API_KEY: str
 
 

@@ -1,9 +1,16 @@
+"""
+News service module for FinAgent-Pro.
+
+Fetches latest stock and market news from external APIs (NewsAPI and MarketAux),
+normalizes responses into NewsItem models, and supports region and ticker filters.
+"""
+
 import httpx
-from datetime import datetime
 from typing import List, Optional
+
+from backend.agent.schemas import NewsItem, NewsRegion
 from backend.utils.logger import logger
 from backend.utils.settings import settings
-from backend.agent.schemas import NewsItem, NewsRegion
 
 
 class NewsService:
@@ -16,6 +23,7 @@ class NewsService:
     """
 
     def __init__(self) -> None:
+        """Load API keys from settings for NewsAPI and MarketAux."""
         self.newsapi_key = settings.NEWSAPI_KEY
         self.marketaux_api_key = settings.MARKETAUX_API_KEY
 
@@ -41,55 +49,53 @@ class NewsService:
         ticker: Optional[str],
         limit: int,
     ) -> list[NewsItem]:
-        url = "https://newsapi.org/v2/top-headlines"
+        """
+        Fetch news from NewsAPI (used for India region).
 
+        Without ticker: uses top-headlines (business, country=in).
+        With ticker: uses everything search with a combined query.
+        """
+        url = "https://newsapi.org/v2/top-headlines"
         params = {
             "apiKey": self.newsapi_key,
-            "category":"business",
-            "country":"in",
-            "pageSize":limit
+            "category": "business",
+            "country": "in",
+            "pageSize": limit,
         }
 
         if ticker:
             url = "https://newsapi.org/v2/everything"
-
             params = {
                 "apiKey": self.newsapi_key,
-                "q":f"{ticker} AND (stock OR market OR finance)",
-                "sortBy":"publishedAt",
-                "language":"en",
-                "pageSize":limit
+                "q": f"{ticker} AND (stock OR market OR finance)",
+                "sortBy": "publishedAt",
+                "language": "en",
+                "pageSize": limit,
             }
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             try:
                 response = await client.get(url, params=params)
                 response.raise_for_status()
                 data = response.json()
-
                 articles = data.get("articles", [])
                 news_items: list[NewsItem] = []
 
                 for article in articles:
-                    # Skip removed/placeholder articles
                     if article.get("title") == "[Removed]":
                         continue
-
                     news_items.append(
                         NewsItem(
                             title=article.get("title") or "",
                             description=article.get("description"),
                             url=article.get("url") or "",
                             source=(article.get("source") or {}).get("name", "NewsAPI"),
-                            # Let Pydantic parse ISO datetime string
                             published_date=article.get("publishedAt"),
                         )
                     )
-
                 return news_items
-
             except Exception as e:
-                logger.error(f"Error fetching from NewsAPI: {e}")
+                logger.error("Error fetching from NewsAPI: %s", e)
                 return []
 
     async def _fetch_from_marketaux(
@@ -98,33 +104,32 @@ class NewsService:
         ticker: Optional[str],
         limit: int,
     ) -> list[NewsItem]:
-        # MarketAux expects api_token and symbols (plural); see https://marketaux.com/documentation
-        url = "https://api.marketaux.com/v1/news/all"
+        """
+        Fetch news from MarketAux (used for US and GLOBAL regions).
 
+        MarketAux expects api_token and symbols (plural). See:
+        https://marketaux.com/documentation
+        """
+        url = "https://api.marketaux.com/v1/news/all"
         params: dict = {
             "api_token": self.marketaux_api_key,
             "language": "en",
             "limit": limit,
         }
-
         if region == NewsRegion.US:
             params["countries"] = "us"
-
         if ticker:
             params["symbols"] = ticker
-        # When no ticker, omit symbols to get general financial news
 
         async with httpx.AsyncClient(timeout=15.0) as client:
             try:
                 response = await client.get(url, params=params)
                 response.raise_for_status()
                 data = response.json()
-
                 data_items = data.get("data", [])
                 news_items: list[NewsItem] = []
 
                 for item in data_items:
-                    # MarketAux uses published_at (with underscore)
                     pub_raw = item.get("published_at") or item.get("publishedAt")
                     if not pub_raw:
                         continue
@@ -137,9 +142,7 @@ class NewsService:
                             published_date=pub_raw,
                         )
                     )
-
                 return news_items
-
             except httpx.HTTPStatusError as e:
                 logger.error(
                     "MarketAux API error: status=%s response=%s",

@@ -16,12 +16,13 @@ from backend.agent.schemas import (
     QueryRequest,
     QueryResponse,
 )
-from backend.utils.logger import logger
 from backend.services.news_service import news_service
+from backend.utils.logger import logger
 
+# Router for /health, /analyze, and /news endpoints
 router = APIRouter()
 
-# Global reference to the FinanceAgent instance injected from the application
+# FinanceAgent instance set at startup via set_agent(); used by /analyze
 agent: Optional[object] = None
 
 
