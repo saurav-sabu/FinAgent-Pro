@@ -119,6 +119,8 @@ class TrendingStock(BaseModel):
 
 class StockDetails(BaseModel):
     ticker:str
+    name: Optional[str] = None
+    sector: Optional[str] = None
     price:float
     change:float
     change_percent:float
@@ -126,7 +128,10 @@ class StockDetails(BaseModel):
     previous_close:float
     day_high:float
     day_low:float
+    five_two_week_high:float
+    five_two_week_low:float
     volume:int
+    market_cap:Optional[float] = None
 
 class RiskAnalysis(BaseModel):
     score: int

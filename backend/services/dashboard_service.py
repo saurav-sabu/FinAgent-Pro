@@ -140,6 +140,8 @@ class DashboardService:
 
         price_details = {
             "ticker": ticker,
+            "name": stock.info.get("longName", ""),
+            "sector": stock.info.get("sector", ""),
             "price": round(latest["Close"], 2),
             "change": round(price_change, 2),
             "change_percent": round(price_change_pct, 2),
@@ -148,6 +150,9 @@ class DashboardService:
             "day_high": round(latest["High"], 2),
             "day_low": round(latest["Low"], 2),
             "volume": int(latest["Volume"]),
+            "market_cap": stock.info.get("marketCap", None),
+            "five_two_week_high": round(stock.info.get("fiftyTwoWeekHigh", 0), 2),
+            "five_two_week_low": round(stock.info.get("fiftyTwoWeekLow", 0), 2),
         }
 
         rsi_series = self._calculate_rsi(hist["Close"])
