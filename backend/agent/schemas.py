@@ -8,7 +8,7 @@ Defines data structures for:
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Dict,Any
 
 from pydantic import BaseModel, Field
 
@@ -106,3 +106,39 @@ class NewsFilterRequest(BaseModel):
     )
     ticker: Optional[str] = Field(None, description="Stock ticker symbol (e.g. AAPL)")
     limit: int = Field(default=10, ge=1, le=50)
+
+
+class MarketIndex(BaseModel):
+    name: str
+    change_percent: float
+
+class TrendingStock(BaseModel):
+    ticker:str
+    price:float
+    change_percent:float
+
+class StockDetails(BaseModel):
+    ticker:str
+    price:float
+    change:float
+    change_percent:float
+    open:float
+    previous_close:float
+    day_high:float
+    day_low:float
+    volume:int
+
+class RiskAnalysis(BaseModel):
+    score: int
+    level:str
+    reasons: List[str]
+    rsi: float
+    volatility: float
+    beta: float
+
+class DashboardResponse(BaseModel):
+    indices: Dict[str,float]
+    trending: Dict[str,List[TrendingStock]]
+    stock_lookup: StockDetails
+    risk_score: RiskAnalysis
+    volume_alert: bool

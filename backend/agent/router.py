@@ -15,8 +15,10 @@ from backend.agent.schemas import (
     NewsResponse,
     QueryRequest,
     QueryResponse,
+    DashboardResponse
 )
 from backend.services.news_service import news_service
+from backend.services.dashboard_service import dashboard_service
 from backend.utils.logger import logger
 
 # Router for /health, /analyze, and /news endpoints
@@ -114,3 +116,15 @@ async def get_latest_market_news(
         items=news_items,
         total_results=len(news_items),
     )
+
+
+@router.get("/dashboard",response_model=DashboardResponse,tags=["Market Data"])
+async def get_dashboard(request:Request,ticker:str="AAPL"):
+    try:
+        data = await dashboard_service.get_dashboard_data(ticker)
+        return data
+    except ValueError as e:
+        raise HTTPException(status_code=404,detail=str(e))
+    except Exception as e:
+        logger.error(f"Dashboard error: {e}")
+        raise HTTPException(status_code=500,detail="Failed to load dashboard data")
