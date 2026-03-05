@@ -110,12 +110,17 @@ class NewsFilterRequest(BaseModel):
 
 class MarketIndex(BaseModel):
     name: str
+    price: float
     change_percent: float
+    currency: str = "USD"
 
 class TrendingStock(BaseModel):
     ticker:str
+    name: str
     price:float
     change_percent:float
+    volume: int
+    currency: str = "USD"
 
 class StockDetails(BaseModel):
     ticker:str
@@ -132,6 +137,7 @@ class StockDetails(BaseModel):
     five_two_week_low:float
     volume:int
     market_cap:Optional[float] = None
+    currency: str = "USD"
 
 class RiskAnalysis(BaseModel):
     score: int
@@ -142,7 +148,7 @@ class RiskAnalysis(BaseModel):
     beta: float
 
 class DashboardResponse(BaseModel):
-    indices: Dict[str,float]
+    indices: Dict[str, MarketIndex]
     trending: Dict[str,List[TrendingStock]]
     stock_lookup: StockDetails
     risk_score: RiskAnalysis

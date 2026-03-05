@@ -29,8 +29,8 @@ class Settings(BaseSettings):
         ANTHROPIC_API_KEY (str): API key for authenticating with Anthropic Claude API.
                                 Required environment variable.
     """
-    # Configure Pydantic to load from .env file and ignore extra environment variables
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # Configure Pydantic to load from .env file inside the backend folder
+    model_config = SettingsConfigDict(env_file="backend/.env", extra="ignore")
 
     # LLM model identifier (e.g., 'claude-3-5-sonnet-20241022')
     MODEL_ID: str

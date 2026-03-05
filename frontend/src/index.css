@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --color-fin-bg: #0b0f19;
+  --color-fin-card: #151b2a;
+  --color-fin-card-hover: #1a2235;
+  --color-fin-border: #2a3441;
+  
+  --color-fin-text: #f1f5f9;
+  --color-fin-muted: #94a3b8;
+  
+  --color-fin-green: #10b981;
+  --color-fin-green-bg: #10b98115;
+  --color-fin-red: #ef4444;
+  --color-fin-red-bg: #ef444415;
+  
+  --color-fin-accent: #3b82f6;
+
+  --animate-fade-in: fade-in 0.4s ease-out;
+  --animate-slide-up: slide-up 0.5s ease-out;
+  
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+html, body {
+  @apply bg-fin-bg text-fin-text font-sans antialiased m-0 p-0;
+  color-scheme: dark;
+}
+
+/* Custom Scrollbar for a premium look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-fin-bg;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-fin-border rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-fin-muted;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  @apply bg-fin-card/80 backdrop-blur-md border border-fin-border rounded-xl shadow-lg transition-all duration-300;
+}
+.glass-panel:hover {
+  @apply bg-fin-card-hover/90 border-fin-border/80 shadow-xl;
+}

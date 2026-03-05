@@ -8,6 +8,7 @@ including health checks and query analysis.
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
 
 from backend.agent.schemas import (
     HealthResponse,
@@ -57,20 +58,17 @@ async def health_check() -> HealthResponse:
 
 @router.post(
     "/analyze",
-    response_model=QueryResponse,
     tags=["Analysis"],
-    summary="Analyze a financial query",
-    response_description="AI-generated analysis for the given query",
+    summary="Analyze a financial query with streaming response",
+    response_description="Server-Sent Events streaming the AI-generated analysis",
 )
-async def analyze(request: Request, body: QueryRequest) -> QueryResponse:
+async def analyze(request: Request, body: QueryRequest) -> StreamingResponse:
     """
-    Analyze a financial query using the injected FinanceAgent.
+    Stream a financial query analysis using the injected FinanceAgent.
 
-    **Request body (JSON):** `{"query": "Analyze AAPL"}` — must be JSON with a `query` field (1–1000 chars).
+    **Request body (JSON):** `{"query": "Analyze AAPL"}` — must be JSON with a `query` field.
 
-    **Returns:** `{"query": "...", "response": "..."}` with the analysis text.
-
-    Raises **503** if the agent is not yet initialized; **422** if body is missing or invalid.
+    **Returns:** A text/event-stream of the analysis text chunks.
     """
     if agent is None:
         logger.error("Analysis requested but agent is not initialized.")
@@ -79,11 +77,12 @@ async def analyze(request: Request, body: QueryRequest) -> QueryResponse:
             detail="Agent not initialized. Server may still be starting up.",
         )
 
-    logger.info(f"Received analysis request for query: {body.query[:50]}...")
-    result = await agent.analyze(body.query)
-
-    logger.info("Analysis request completed successfully.")
-    return QueryResponse(query=body.query, response=result)
+    logger.info(f"Received streaming analysis request for query: {body.query[:50]}...")
+    
+    return StreamingResponse(
+        agent.stream_analyze(body.query),
+        media_type="text/event-stream"
+    )
 
 
 

@@ -65,10 +65,14 @@ class DashboardService:
         indices_data = self._get_indices_data()
         trending_data = self._get_trending_data()
 
-        gainers = sorted(
-            trending_data, key=lambda x: x["change_percent"], reverse=True
-        )[:3]
-        losers = sorted(trending_data, key=lambda x: x["change_percent"])[:3]
+        # Sort all by performance
+        sorted_trending = sorted(trending_data, key=lambda x: x["change_percent"], reverse=True)
+        
+        # Gainers: top 3 positive
+        gainers = [x for x in sorted_trending if x["change_percent"] > 0][:3]
+        
+        # Losers: bottom 3 negative (sorted most negative first)
+        losers = sorted([x for x in trending_data if x["change_percent"] < 0], key=lambda x: x["change_percent"])[:3]
 
         stock_data = self._get_stock_details(ticker)
 
@@ -83,11 +87,11 @@ class DashboardService:
             "volume_alert": stock_data["volume_alert"],
         }
 
-    def _get_indices_data(self) -> Dict[str, float]:
+    def _get_indices_data(self) -> Dict[str, Any]:
         """
         Fetch recent performance (5 trading days) for major indices.
         """
-        data: Dict[str, float] = {}
+        data: Dict[str, Any] = {}
         for name, symbol in self.INDICES.items():
             try:
                 stock = yf.Ticker(symbol)
@@ -96,7 +100,12 @@ class DashboardService:
                     prev_close = hist["Close"].iloc[-2]
                     current_close = hist["Close"].iloc[-1]
                     change_pct = ((current_close - prev_close) / prev_close) * 100
-                    data[name] = round(change_pct, 2)
+                    data[name] = {
+                        "name": name,
+                        "price": round(current_close, 2),
+                        "change_percent": round(change_pct, 2),
+                        "currency": stock.info.get("currency", "USD") if stock.info else "USD"
+                    }
             except Exception as e:
                 logger.warning(f"Failed to fetch index {name}: {e}")
         return data
@@ -110,15 +119,23 @@ class DashboardService:
             try:
                 stock = yf.Ticker(symbol)
                 hist = stock.history(period="5d")
+                
+                # We need the stock name, if available
+                name = stock.info.get("shortName", symbol) if stock.info else symbol
+
                 if len(hist) >= 2:
                     prev_close = hist["Close"].iloc[-2]
                     current_close = hist["Close"].iloc[-1]
+                    vol = hist["Volume"].iloc[-1]
                     change_pct = ((current_close - prev_close) / prev_close) * 100
                     data.append(
                         {
                             "ticker": symbol,
+                            "name": name,
                             "price": round(current_close, 2),
                             "change_percent": round(change_pct, 2),
+                            "volume": int(vol),
+                            "currency": stock.info.get("currency", "USD") if stock.info else "USD"
                         }
                     )
             except Exception as e:
@@ -153,6 +170,7 @@ class DashboardService:
             "market_cap": stock.info.get("marketCap", None),
             "five_two_week_high": round(stock.info.get("fiftyTwoWeekHigh", 0), 2),
             "five_two_week_low": round(stock.info.get("fiftyTwoWeekLow", 0), 2),
+            "currency": stock.info.get("currency", "USD"),
         }
 
         rsi_series = self._calculate_rsi(hist["Close"])
