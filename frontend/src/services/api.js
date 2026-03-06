@@ -30,8 +30,8 @@ export const marketAPI = {
             // Adapt Backend DashboardResponse schema to Frontend expected structure
             return {
                 // Map backend dict to array of objects expected by IndexCard
-                indices: Object.entries(data.indices || {}).map(([name, entry]) => ({
-                    name: entry.name || name,
+                indices: Object.values(data.indices || {}).map(entry => ({
+                    name: entry.name,
                     value: entry.price ? entry.price.toLocaleString('en-US', { style: 'currency', currency: entry.currency || 'USD' }) : '---',
                     change: entry.change_percent
                 })),
@@ -55,13 +55,41 @@ export const marketAPI = {
                     volume: stock.volume ? formatVolume(stock.volume) : '---'
                 })),
 
-                // We still use mock chart data because the dashboard API doesn't return historical points
-                chartData: getMockDashboardData().chartData
+                stockDetails: {
+                    ...(data.stock_lookup || {}),
+                    ticker: (data.stock_lookup || {}).ticker,
+                    name: (data.stock_lookup || {}).name,
+                },
+                sectorPerformance: data.sector_performance || {},
+                riskAnalysis: data.risk_score || {},
+                volumeAlert: data.volume_alert || false
             };
 
         } catch (error) {
             console.error('Error fetching dashboard data', error);
             if (USE_MOCK_DATA) return getMockDashboardData();
+            throw error;
+        }
+    },
+
+    getInsight: async (ticker = "AAPL") => {
+        try {
+            if (USE_MOCK_DATA) return {
+                ticker,
+                sentiment: "Bullish",
+                summary_bullets: ["Strong earnings report", "High institutional buying", "MACD crossover"],
+                recommendation: "Strong Buy"
+            };
+            const response = await apiClient.get(`/dashboard/insight?ticker=${ticker}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching AI insight', error);
+            if (USE_MOCK_DATA) return {
+                ticker,
+                sentiment: "Neutral",
+                summary_bullets: ["Error fetching AI insight.", "Check your backend connection.", "API rate limited possibly."],
+                recommendation: "Hold"
+            };
             throw error;
         }
     },

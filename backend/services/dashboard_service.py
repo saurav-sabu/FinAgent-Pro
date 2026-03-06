@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas as pd
 from typing import Dict, List, Any
+import numpy as np
 
 import yfinance as yf
 import pandas as pd
@@ -24,6 +25,15 @@ class DashboardService:
         "Dow Jones": "^DJI",
         "Nifty 50": "^NSEI",
         "Sensex": "^BSESN",
+    }
+
+    SECTORS = {
+        "Technology": "XLK",
+        "Financials": "XLF",
+        "Healthcare": "XLV",
+        "Energy": "XLE",
+        "Consumer": "XLY",
+        "Industrial": "XLI"
     }
 
     TRENDING_TICKERS = [
@@ -64,6 +74,7 @@ class DashboardService:
 
         indices_data = self._get_indices_data()
         trending_data = self._get_trending_data()
+        sector_data = self._get_sector_performance()
 
         # Sort all by performance
         sorted_trending = sorted(trending_data, key=lambda x: x["change_percent"], reverse=True)
@@ -82,6 +93,7 @@ class DashboardService:
                 "gainers": gainers,
                 "losers": losers,
             },
+            "sector_performance": sector_data,
             "stock_lookup": stock_data["details"],
             "risk_score": stock_data["risk"],
             "volume_alert": stock_data["volume_alert"],
@@ -142,18 +154,64 @@ class DashboardService:
                 logger.warning(f"Failed to fetch trending ticker {symbol}: {e}")
         return data
 
+    def _get_sector_performance(self) -> Dict[str, float]:
+        """
+        Fetch recent performance for standard SPDR Sector ETFs to build a heatmap.
+        """
+        data: Dict[str, float] = {}
+        for name, symbol in self.SECTORS.items():
+            try:
+                stock = yf.Ticker(symbol)
+                hist = stock.history(period="5d")
+                if len(hist) >= 2:
+                    prev_close = hist["Close"].iloc[-2]
+                    current_close = hist["Close"].iloc[-1]
+                    change_pct = ((current_close - prev_close) / prev_close) * 100
+                    data[name] = round(change_pct, 2)
+            except Exception as e:
+                logger.warning(f"Failed to fetch sector {name}: {e}")
+        return data
+
     def _get_stock_details(self, ticker: str) -> Dict[str, Any]:
         stock = yf.Ticker(ticker)
-        hist = stock.history(period="6mo")
+        # Fetch 1 year of data to ensure we have enough points for a 200-day moving average
+        hist = stock.history(period="1y")
 
         if hist.empty:
             raise ValueError(f"{ticker} not found")
+
+        # Focus our charting response on the last 6 months for optimal display
+        display_hist = hist.tail(126) # Roughly 6 months of trading days
 
         latest = hist.iloc[-1]
         prev = hist.iloc[-2]
 
         price_change = latest["Close"] - prev["Close"]
         price_change_pct = (price_change / prev["Close"]) * 100
+
+        
+        # Calculate Moving Averages (on the full 1y history)
+        ma50 = hist["Close"].rolling(window=50).mean()
+        ma200 = hist["Close"].rolling(window=200).mean()
+        
+        # Calculate full RSI series
+        rsi_series_full = self._calculate_rsi(hist["Close"])
+        
+        # Trim indicators to match the 6-month display history
+        # pandas .fillna(np.nan) ensures we have valid floats/NaNs, and we convert NaN -> None for JSON
+        disp_ma50 = ma50.tail(126).replace([np.inf, -np.inf, np.nan], None).tolist()
+        disp_ma200 = ma200.tail(126).replace([np.inf, -np.inf, np.nan], None).tolist()
+        disp_rsi = rsi_series_full.tail(126).replace([np.inf, -np.inf, np.nan], None).tolist()
+        
+        # Format dates as strings
+        chart_dates = display_hist.index.strftime('%Y-%m-%d').tolist()
+
+        # Handle earnings date mapping safely
+        earnings = None
+        if "calendar" in stock.info and stock.info["calendar"]:
+            cal = stock.info["calendar"]
+            if isinstance(cal, dict) and "Earnings Date" in cal and isinstance(cal["Earnings Date"], list) and len(cal["Earnings Date"]) > 0:
+                earnings = cal["Earnings Date"][0].strftime('%Y-%m-%d')
 
         price_details = {
             "ticker": ticker,
@@ -171,10 +229,18 @@ class DashboardService:
             "five_two_week_high": round(stock.info.get("fiftyTwoWeekHigh", 0), 2),
             "five_two_week_low": round(stock.info.get("fiftyTwoWeekLow", 0), 2),
             "currency": stock.info.get("currency", "USD"),
+            "chart_dates": chart_dates,
+            "chart_open": display_hist["Open"].round(2).tolist(),
+            "chart_high": display_hist["High"].round(2).tolist(),
+            "chart_low": display_hist["Low"].round(2).tolist(),
+            "chart_close": display_hist["Close"].round(2).tolist(),
+            "chart_volume": display_hist["Volume"].tolist(),
+            "chart_ma50": [round(x, 2) if x is not None else None for x in disp_ma50],
+            "chart_ma200": [round(x, 2) if x is not None else None for x in disp_ma200],
+            "chart_rsi": [round(x, 2) if x is not None else None for x in disp_rsi],
+            "earnings_date": earnings
         }
-
-        rsi_series = self._calculate_rsi(hist["Close"])
-        current_rsi = rsi_series.iloc[-1] if not rsi_series.empty else 50
+        current_rsi = rsi_series_full.iloc[-1] if not rsi_series_full.empty else 50
 
         volatility = hist["Close"].pct_change().std() * 100
 

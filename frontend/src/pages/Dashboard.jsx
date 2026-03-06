@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
-} from 'recharts';
-import { Loader2, Zap } from 'lucide-react';
+import { Loader2, Zap, CalendarDays } from 'lucide-react';
 import IndexCard from '../components/IndexCard';
 import StockCard from '../components/StockCard';
+import MainChart from '../components/MainChart';
+import VolumeChart from '../components/VolumeChart';
+import RsiChart from '../components/RsiChart';
+import AiInsight from '../components/AiInsight';
+import RiskGauge from '../components/RiskGauge';
+import SectorHeatmap from '../components/SectorHeatmap';
 import { marketAPI } from '../services/api';
 
 const Dashboard = () => {
@@ -39,18 +42,7 @@ const Dashboard = () => {
         );
     }
 
-    // Custom Chart Tooltip
-    const CustomTooltip = ({ active, payload, label }) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className="glass-panel !p-3 !bg-fin-bg/95 border-fin-border min-w-[120px] shadow-2xl z-50">
-                    <p className="text-fin-muted text-xs mb-1 font-medium">{label}</p>
-                    <p className="text-fin-text font-bold text-lg">${payload[0].value.toFixed(2)}</p>
-                </div>
-            );
-        }
-        return null;
-    };
+    // Custom rendering not needed for ApexCharts native tooltips
 
     return (
         <div className="space-y-6 lg:space-y-8 animate-fade-in pb-12 overflow-hidden">
@@ -70,7 +62,7 @@ const Dashboard = () => {
                     <div className="text-right flex items-center gap-4">
                         <div className="text-sm text-fin-muted font-medium">S&P 500</div>
                         <div className="text-lg font-bold text-fin-green flex items-center gap-1.5 justify-end">
-                            {data.indices[0].value} <Zap className="w-4 h-4 fill-fin-green" />
+                            {data.indices && data.indices.length > 0 ? data.indices[0].value : '---'} <Zap className="w-4 h-4 fill-fin-green" />
                         </div>
                     </div>
                 </div>
@@ -78,7 +70,7 @@ const Dashboard = () => {
 
             {/* Indices Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
-                {data.indices.map((index, i) => (
+                {(Array.isArray(data.indices) ? data.indices : Object.values(data.indices || {})).map((index, i) => (
                     <IndexCard key={index.name} {...index} delay={i} />
                 ))}
             </div>
@@ -92,73 +84,85 @@ const Dashboard = () => {
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.5 }}
-                        className="glass-panel p-4 lg:p-6 h-[350px] lg:h-[420px] flex flex-col relative overflow-hidden"
+                        className="glass-panel p-4 lg:p-6 flex flex-col relative overflow-hidden"
                     >
                         {/* Subtle background glow */}
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-fin-accent/5 rounded-full blur-[100px] pointer-events-none" />
 
-                        <div className="flex justify-between items-center mb-6 relative z-10">
-                            <h2 className="text-base lg:text-lg font-bold">Market Performance <span className="text-fin-muted font-normal text-sm ml-2">(Intraday)</span></h2>
-                            <div className="flex gap-1 bg-fin-bg/50 p-1 rounded-lg border border-fin-border/50">
-                                {['1D', '1W', '1M', 'YTD'].map(tf => (
-                                    <button key={tf} className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${tf === '1D' ? 'bg-fin-accent/20 text-fin-accent shadow-sm' : 'text-fin-muted hover:text-fin-text hover:bg-fin-card'}`}>
+                        <div className="flex justify-between items-start lg:items-center mb-6 relative z-10 flex-col lg:flex-row gap-4">
+                            <div>
+                                <h2 className="text-base lg:text-xl font-bold flex items-center gap-2">
+                                    {data.stockDetails?.ticker}
+                                    <span className="text-fin-muted font-normal text-sm">{data.stockDetails?.name}</span>
+                                </h2>
+                                {data.stockDetails?.earnings_date && (
+                                    <div className="mt-2 flex items-center gap-1.5 text-xs text-fin-muted bg-fin-bg/50 px-2 py-1 rounded inline-flex border border-fin-border/50">
+                                        <CalendarDays className="w-3 h-3 text-fin-accent" />
+                                        Next Earnings: {data.stockDetails.earnings_date}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex gap-1 bg-fin-bg/50 p-1 rounded-lg border border-fin-border/50 self-end lg:self-auto">
+                                {['1D', '1W', '1M', '6M', 'YTD'].map(tf => (
+                                    <button key={tf} className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${tf === '6M' ? 'bg-fin-accent/20 text-fin-accent shadow-sm' : 'text-fin-muted hover:text-fin-text hover:bg-fin-card'}`}>
                                         {tf}
                                     </button>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="flex-1 w-full min-h-0 relative z-10">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={data.chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                                    <defs>
-                                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#2a3441" vertical={false} opacity={0.5} />
-                                    <XAxis
-                                        dataKey="time"
-                                        stroke="#64748b"
-                                        fontSize={11}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        minTickGap={30}
-                                        dy={10}
-                                    />
-                                    <YAxis
-                                        stroke="#64748b"
-                                        fontSize={11}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        domain={['dataMin - 50', 'dataMax + 50']}
-                                        tickFormatter={(val) => `$${val}`}
-                                        dx={-10}
-                                    />
-                                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#2a3441', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                                    <Area
-                                        type="monotone"
-                                        dataKey="value"
-                                        stroke="#3b82f6"
-                                        strokeWidth={2.5}
-                                        fillOpacity={1}
-                                        fill="url(#colorValue)"
-                                        animationDuration={2000}
-                                        activeDot={{ r: 6, fill: '#3b82f6', stroke: '#0b0f19', strokeWidth: 2 }}
-                                    />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                        <div className="w-full h-[350px] lg:h-[400px] relative z-10">
+                            <MainChart data={data.stockDetails} />
+                        </div>
+                        <div className="w-full h-[120px] relative z-10 mt-4 border-t border-fin-border/30 pt-4">
+                            <VolumeChart data={data.stockDetails} />
+                        </div>
+                        <div className="w-full h-[120px] relative z-10 mt-2 border-t border-fin-border/30 pt-4">
+                            <RsiChart data={data.stockDetails} />
                         </div>
                     </motion.div>
                 </div>
 
                 {/* Sidebar / Trending */}
                 <div className="space-y-6">
+                    {/* Insights Panel */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.5, delay: 0.1 }}
+                    >
+                        <AiInsight ticker={data.stockDetails?.ticker || "AAPL"} />
+                    </motion.div>
+
+                    {/* Risk Gauge */}
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.5, delay: 0.2 }}
+                        className="glass-panel p-4 lg:p-5"
+                    >
+                        <RiskGauge
+                            score={data.riskAnalysis?.score || 0}
+                            level={data.riskAnalysis?.level || 'Low'}
+                            reasons={data.riskAnalysis?.reasons || []}
+                        />
+                    </motion.div>
+
+                    {/* Sector Heatmap */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.5, delay: 0.3 }}
+                        className="glass-panel p-4 lg:p-5"
+                    >
+                        <h2 className="text-base font-bold mb-3">Sector Heatmap</h2>
+                        <SectorHeatmap sectors={data.sectorPerformance} />
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.5, delay: 0.35 }}
                         className="glass-panel p-4 lg:p-5"
                     >
                         <h2 className="text-base lg:text-lg font-bold mb-4 flex items-center justify-between">

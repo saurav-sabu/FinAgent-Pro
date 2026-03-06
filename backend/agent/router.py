@@ -7,19 +7,20 @@ including health checks and query analysis.
 
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import StreamingResponse
-
 from backend.agent.schemas import (
     HealthResponse,
     NewsRegion,
     NewsResponse,
     QueryRequest,
     QueryResponse,
-    DashboardResponse
+    DashboardResponse,
+    InsightResponse
 )
 from backend.services.news_service import news_service
 from backend.services.dashboard_service import dashboard_service
+from backend.utils.limiter import rate_limit
 from backend.utils.logger import logger
 
 # Router for /health, /analyze, and /news endpoints
@@ -117,13 +118,55 @@ async def get_latest_market_news(
     )
 
 
-@router.get("/dashboard",response_model=DashboardResponse,tags=["Market Data"])
+@router.get("/dashboard",response_model=DashboardResponse,tags=["Market Data"], dependencies=[Depends(rate_limit(20, 10))])
 async def get_dashboard(request:Request,ticker:str="AAPL"):
+    data = await dashboard_service.get_dashboard_data(ticker)
+    return data
+
+@router.get("/dashboard/insight", response_model=InsightResponse, tags=["Market Data"], dependencies=[Depends(rate_limit(10, 10))])
+async def get_dashboard_insight(request: Request, ticker: str = "AAPL"):
+    """
+    Generate an AI-powered stock sentiment overview.
+    """
+    if agent is None:
+        raise HTTPException(status_code=503, detail="Agent not initialized.")
+        
     try:
-        data = await dashboard_service.get_dashboard_data(ticker)
-        return data
-    except ValueError as e:
-        raise HTTPException(status_code=404,detail=str(e))
+        query = f"Provide a brief 1-word sentiment (Bullish, Bearish, or Neutral), 3 ultra-concise bullet points of fundamental/technical insight, and a 2-word recommendation for {ticker}. Format your response exactly like this: \nSentiment: [word]\nBullets: \n- [point1]\n- [point2]\n- [point3]\nRecommendation: [words]"
+        
+        raw_response = await agent.analyze(query)
+        
+        # Parse the rigid string format
+        sentiment = "Neutral"
+        bullets = []
+        rec = "Hold"
+        
+        lines = [line.strip() for line in raw_response.split('\\n') if line.strip()]
+        for line in lines:
+            if line.startswith("Sentiment:"):
+                sentiment = line.replace("Sentiment:", "").strip()
+            elif line.startswith("- "):
+                bullets.append(line.replace("- ", "").strip())
+            elif line.startswith("Recommendation:"):
+                rec = line.replace("Recommendation:", "").strip()
+                
+        # Fallback if unstructured
+        if len(bullets) == 0:
+            bullets = ["Waiting for technicals", "AI processing delayed", "Market dynamic"]
+            
+        return InsightResponse(
+            ticker=ticker.upper(),
+            sentiment=sentiment,
+            summary_bullets=bullets[:3],
+            recommendation=rec
+        )
+        
     except Exception as e:
-        logger.error(f"Dashboard error: {e}")
-        raise HTTPException(status_code=500,detail="Failed to load dashboard data")
+        logger.error(f"Insight generation error: {e}")
+        # Soft fallback during errors to not break dashboard
+        return InsightResponse(
+            ticker=ticker.upper(),
+            sentiment="Neutral",
+            summary_bullets=["Unable to fetch AI insight.", "Try again later.", "API may be restricted."],
+            recommendation="Hold"
+        )

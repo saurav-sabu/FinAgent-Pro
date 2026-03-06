@@ -138,6 +138,22 @@ class StockDetails(BaseModel):
     volume:int
     market_cap:Optional[float] = None
     currency: str = "USD"
+    
+    # Charting Arrays
+    chart_dates: List[str] = Field(default_factory=list)
+    chart_open: List[float] = Field(default_factory=list)
+    chart_high: List[float] = Field(default_factory=list)
+    chart_low: List[float] = Field(default_factory=list)
+    chart_close: List[float] = Field(default_factory=list)
+    chart_volume: List[int] = Field(default_factory=list)
+    
+    # Indicators
+    chart_ma50: List[Optional[float]] = Field(default_factory=list)
+    chart_ma200: List[Optional[float]] = Field(default_factory=list)
+    chart_rsi: List[Optional[float]] = Field(default_factory=list)
+    
+    # Events
+    earnings_date: Optional[str] = None
 
 class RiskAnalysis(BaseModel):
     score: int
@@ -150,6 +166,13 @@ class RiskAnalysis(BaseModel):
 class DashboardResponse(BaseModel):
     indices: Dict[str, MarketIndex]
     trending: Dict[str,List[TrendingStock]]
+    sector_performance: Dict[str, float]
     stock_lookup: StockDetails
     risk_score: RiskAnalysis
     volume_alert: bool
+
+class InsightResponse(BaseModel):
+    ticker: str
+    sentiment: str
+    summary_bullets: List[str]
+    recommendation: str
