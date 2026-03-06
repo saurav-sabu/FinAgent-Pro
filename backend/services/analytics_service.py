@@ -16,6 +16,41 @@ class AnalyticsService:
     Service for retrieving deep financial analytics data.
     """
 
+    REGIONAL_SECTORS = {
+        "US": {
+            "Technology": "XLK",
+            "Financials": "XLF",
+            "Healthcare": "XLV",
+            "Energy": "XLE",
+            "Consumer": "XLY",
+            "Industrial": "XLI"
+        },
+        "India": {
+            "IT": "^CNXIT",
+            "Financials": "^CNXFIN",
+            "Pharma": "^CNXPHARMA",
+            "Energy": "^CNXENERGY",
+            "FMCG": "^CNXFMCG",
+            "Auto": "^CNXAUTO",
+            "Metals": "^CNXMETAL"
+        },
+        "Europe": {
+            "Technology": "EXV3.DE",
+            "Financials": "EXV1.DE",
+            "Healthcare": "EXV4.DE",
+            "Energy": "EXV5.DE",
+            "Consumer": "EXV2.DE",
+            "Industrials": "EXV6.DE"
+        },
+        "China": {
+            "Consumer": "CHIQ",
+            "Internet/Tech": "KWEB",
+            "Broad Market": "MCHI",
+            "A-Shares": "ASHR",
+            "Dividend": "KBA"
+        }
+    }
+
     @ttl_cache(ttl_seconds=3600)  # Cache for 1 hour to prevent YFinance abuse
     async def get_fundamental_data(self, ticker: str) -> Dict[str, Any]:
         """
@@ -125,7 +160,8 @@ class AnalyticsService:
 
             # Helper function to clean data for JSON
             def clean_series(series):
-                return series.replace([np.inf, -np.inf, np.nan], None).round(4).tolist()
+                # Round first while it's still numeric, then replace NaNs/Infs with None for JSON serialization
+                return series.round(4).replace([np.inf, -np.inf, np.nan], None).tolist()
 
             dates = hist.index.strftime('%Y-%m-%d').tolist()
 
@@ -205,5 +241,59 @@ class AnalyticsService:
         except Exception as e:
             logger.error(f"Failed to fetch Finnhub Calendar: {e}")
             return []
+
+    @ttl_cache(ttl_seconds=3600)
+    async def get_sector_performance(self, region: str = "US") -> Dict[str, float]:
+        """
+        Fetch recent performance for standard regional Sector ETFs and Indices.
+        """
+        if region not in self.REGIONAL_SECTORS:
+            region = "US"
+            
+        sectors = self.REGIONAL_SECTORS[region]
+        data: Dict[str, float] = {}
+        
+        for name, symbol in sectors.items():
+            try:
+                stock = yf.Ticker(symbol)
+                hist = stock.history(period="5d")
+                if len(hist) >= 2:
+                    prev_close = hist["Close"].iloc[-2]
+                    current_close = hist["Close"].iloc[-1]
+                    change_pct = ((current_close - prev_close) / prev_close) * 100
+                    data[name] = round(change_pct, 2)
+            except Exception as e:
+                logger.warning(f"Failed to fetch sector {name} for {region}: {e}")
+                
+        # Sort sectors by highest percentage return
+        sorted_data = dict(sorted(data.items(), key=lambda item: item[1], reverse=True))
+        return sorted_data
+
+    @ttl_cache(ttl_seconds=3600)
+    async def get_sector_performance(self, region: str = "US") -> Dict[str, float]:
+        """
+        Fetch recent performance for standard regional Sector ETFs and Indices.
+        """
+        if region not in self.REGIONAL_SECTORS:
+            region = "US"
+            
+        sectors = self.REGIONAL_SECTORS[region]
+        data: Dict[str, float] = {}
+        
+        for name, symbol in sectors.items():
+            try:
+                stock = yf.Ticker(symbol)
+                hist = stock.history(period="5d")
+                if len(hist) >= 2:
+                    prev_close = hist["Close"].iloc[-2]
+                    current_close = hist["Close"].iloc[-1]
+                    change_pct = ((current_close - prev_close) / prev_close) * 100
+                    data[name] = round(change_pct, 2)
+            except Exception as e:
+                logger.warning(f"Failed to fetch sector {name} for {region}: {e}")
+                
+        # Sort sectors by highest percentage return
+        sorted_data = dict(sorted(data.items(), key=lambda item: item[1], reverse=True))
+        return sorted_data
 
 analytics_service = AnalyticsService()

@@ -173,11 +173,11 @@ export const marketAPI = {
         }
     },
 
-    getNews: async (symbol) => {
+    getNews: async (symbol, region = "GLOBAL") => {
         try {
             if (USE_MOCK_DATA) return getMockNews(symbol);
 
-            const response = await apiClient.get(`/news?ticker=${symbol}`);
+            const response = await apiClient.get(`/news?ticker=${symbol}&region=${region}`);
             const data = response.data;
 
             // Backend returns NewsResponse { region: ..., items: [{title, description, url, source, published_date, ...}]}
@@ -227,6 +227,16 @@ export const marketAPI = {
             return response.data;
         } catch (error) {
             console.error('Error fetching economic calendar', error);
+            throw error;
+        }
+    },
+
+    getSectors: async (region = "US") => {
+        try {
+            const response = await apiClient.get(`/api/analytics/sectors?region=${region}`);
+            return response.data;
+        } catch (error) {
+            console.error(`Error fetching sector performance for ${region}`, error);
             throw error;
         }
     }

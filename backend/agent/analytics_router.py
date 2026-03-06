@@ -54,3 +54,16 @@ async def get_calendar(
         return await analytics_service.get_economic_calendar()
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal server error fetching economic calendar")
+
+@router.get("/sectors", response_model=Dict[str, float])
+async def get_sectors(
+    region: str = Query("US", description="Region for sector performance (US, India, Europe, China)"),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Retrieve regional sector and industry performance.
+    """
+    try:
+        return await analytics_service.get_sector_performance(region=region)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Internal server error fetching sector performance")
