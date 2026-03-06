@@ -199,6 +199,36 @@ export const marketAPI = {
             if (USE_MOCK_DATA) return getMockNews(symbol);
             throw error;
         }
+    },
+
+    getFundamentals: async (ticker) => {
+        try {
+            const response = await apiClient.get(`/api/analytics/fundamentals/${ticker}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching fundamentals', error);
+            throw error;
+        }
+    },
+
+    getTechnicals: async (ticker, period = "1y") => {
+        try {
+            const response = await apiClient.get(`/api/analytics/technicals/${ticker}?period=${period}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching technical indicators', error);
+            throw error;
+        }
+    },
+
+    getCalendar: async () => {
+        try {
+            const response = await apiClient.get(`/api/analytics/calendar`);
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching economic calendar', error);
+            throw error;
+        }
     }
 };
 

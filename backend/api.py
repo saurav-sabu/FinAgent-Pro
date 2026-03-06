@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.agent.controller import FinanceAgent
 from backend.agent.router import router, set_agent
 from backend.agent.auth_router import router as auth_router
+from backend.agent.analytics_router import router as analytics_router
 from backend.database import engine
 from backend import models
 from backend.utils.logger import logger
@@ -81,4 +82,6 @@ app.add_middleware(
 # Register the agent-related routes with the application
 app.include_router(auth_router)
 app.include_router(router)
+app.include_router(analytics_router)
+
 

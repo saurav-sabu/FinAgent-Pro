@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     # JWT Authentication signing secret
     SECRET_KEY: str
 
+    # Finnhub API Key for live Macroeconomic Calendar
+    FINNHUB_API_KEY: str = ""
+
 
 
 

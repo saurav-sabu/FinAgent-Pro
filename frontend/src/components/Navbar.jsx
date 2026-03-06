@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { LineChart, MessageSquareText, Newspaper, Menu, X, Activity, Sun, Moon, Search } from 'lucide-react';
+import { LineChart, MessageSquareText, Newspaper, Menu, X, Activity, Sun, Moon, Search, PieChart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -42,6 +42,7 @@ const Navbar = () => {
 
     const navLinks = [
         { name: 'Dashboard', path: '/dashboard', icon: LineChart },
+        { name: 'Analytics', path: '/analytics', icon: PieChart },
         { name: 'AI Assistant', path: '/assistant', icon: MessageSquareText },
         { name: 'Stock News', path: '/news', icon: Newspaper },
     ];
