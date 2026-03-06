@@ -37,7 +37,7 @@ const Login = () => {
                     <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-fin-bg border border-fin-border/50 mb-4 shadow-lg shadow-fin-accent/10">
                         <Activity className="h-6 w-6 text-fin-accent" />
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">Access Terminal</h2>
+                    <h2 className="text-2xl font-bold text-fin-text mb-2 tracking-tight">Access Terminal</h2>
                     <p className="text-fin-muted text-sm">Sign in to your FinAgent-Pro portal</p>
                 </div>
 
@@ -55,7 +55,7 @@ const Login = () => {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-fin-bg border border-fin-border/60 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-fin-accent focus:ring-1 focus:ring-fin-accent/50 transition-all font-medium text-white placeholder-fin-muted/50"
+                            className="w-full bg-fin-bg border border-fin-border/60 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-fin-accent focus:ring-1 focus:ring-fin-accent/50 transition-all font-medium text-fin-text placeholder-fin-muted/50"
                             placeholder="trader@finagent.pro"
                         />
                     </div>
@@ -66,7 +66,7 @@ const Login = () => {
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-fin-bg border border-fin-border/60 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-fin-accent focus:ring-1 focus:ring-fin-accent/50 transition-all font-medium text-white placeholder-fin-muted/50"
+                            className="w-full bg-fin-bg border border-fin-border/60 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-fin-accent focus:ring-1 focus:ring-fin-accent/50 transition-all font-medium text-fin-text placeholder-fin-muted/50"
                             placeholder="••••••••"
                         />
                     </div>
@@ -81,7 +81,7 @@ const Login = () => {
 
                 <p className="mt-6 text-center text-sm text-fin-muted relative z-10">
                     Don't have clearance?{' '}
-                    <Link to="/register" className="text-fin-accent hover:text-white font-bold transition-colors">
+                    <Link to="/register" className="text-fin-accent hover:text-fin-text font-bold transition-colors">
                         Request Access
                     </Link>
                 </p>

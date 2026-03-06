@@ -61,7 +61,7 @@ const Navbar = () => {
                             <div className="p-1.5 rounded-lg bg-fin-accent/10 group-hover:bg-fin-accent/20 transition-colors">
                                 <Activity className="w-6 h-6 text-fin-accent" />
                             </div>
-                            <div className="font-bold text-xl tracking-tight text-white flex flex-col leading-none">
+                            <div className="font-bold text-xl tracking-tight text-fin-text flex flex-col leading-none">
                                 <span>FinAgent<span className="text-fin-accent">-Pro</span></span>
                             </div>
                         </Link>
@@ -79,7 +79,7 @@ const Navbar = () => {
                     flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200
                     ${isActive
                                             ? 'text-fin-accent bg-fin-accent/10'
-                                            : 'text-fin-muted hover:text-white hover:bg-fin-card'}
+                                            : 'text-fin-muted hover:text-fin-text hover:bg-fin-card'}
                   `}
                                 >
                                     <Icon className="w-4 h-4" />
@@ -93,7 +93,7 @@ const Navbar = () => {
                     <div className="hidden md:flex items-center space-x-6">
                         <button
                             onClick={toggleTheme}
-                            className="p-2 rounded-full text-fin-muted hover:text-white hover:bg-fin-card transition-colors outline-none"
+                            className="p-2 rounded-full text-fin-muted hover:text-fin-text hover:bg-fin-card transition-colors outline-none"
                             title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
                         >
                             {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -102,7 +102,7 @@ const Navbar = () => {
                         {user ? (
                             <div className="flex items-center gap-4">
                                 <div className="text-sm font-medium text-fin-muted">
-                                    Operator <span className="text-white font-bold">{user.name}</span>
+                                    Operator <span className="text-fin-text font-bold">{user.name}</span>
                                 </div>
 
                                 {/* Quick Search Hotkey Hint */}
@@ -114,14 +114,14 @@ const Navbar = () => {
                                 </div>
                                 <button
                                     onClick={logout}
-                                    className="text-xs px-3 py-1.5 rounded-md border border-fin-border/50 text-fin-muted hover:text-white hover:bg-fin-red/10 hover:border-fin-red/30 transition-all font-bold uppercase tracking-wider"
+                                    className="text-xs px-3 py-1.5 rounded-md border border-fin-border/50 text-fin-muted hover:text-fin-text hover:bg-fin-red/10 hover:border-fin-red/30 transition-all font-bold uppercase tracking-wider"
                                 >
                                     Log Out
                                 </button>
                             </div>
                         ) : (
                             <div className="flex items-center gap-3">
-                                <Link to="/login" className="text-sm font-bold text-fin-muted hover:text-white transition-colors">
+                                <Link to="/login" className="text-sm font-bold text-fin-muted hover:text-fin-text transition-colors">
                                     Login
                                 </Link>
                                 <Link to="/register" className="text-xs font-bold bg-fin-accent/10 text-fin-accent border border-fin-accent/30 px-3 py-1.5 rounded-md hover:bg-fin-accent/20 transition-all uppercase tracking-wider">
@@ -135,13 +135,13 @@ const Navbar = () => {
                     <div className="flex items-center md:hidden space-x-2">
                         <button
                             onClick={toggleTheme}
-                            className="p-2 rounded-md text-fin-muted hover:text-white transition-colors outline-none"
+                            className="p-2 rounded-md text-fin-muted hover:text-fin-text transition-colors outline-none"
                         >
                             {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                         </button>
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="inline-flex items-center justify-center p-2 rounded-md text-fin-muted hover:text-white hover:bg-fin-card transition-colors outline-none"
+                            className="inline-flex items-center justify-center p-2 rounded-md text-fin-muted hover:text-fin-text hover:bg-fin-card transition-colors outline-none"
                         >
                             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
@@ -169,7 +169,7 @@ const Navbar = () => {
                       flex items-center gap-3 px-3 py-3 rounded-md text-base font-medium transition-colors
                       ${isActive
                                                 ? 'text-fin-accent bg-fin-accent/10'
-                                                : 'text-fin-muted hover:text-white hover:bg-fin-card'}
+                                                : 'text-fin-muted hover:text-fin-text hover:bg-fin-card'}
                     `}
                                     >
                                         <Icon className="w-5 h-5" />
@@ -182,7 +182,7 @@ const Navbar = () => {
                                 {user ? (
                                     <div className="px-3">
                                         <div className="text-xs text-fin-muted mb-3 font-medium uppercase tracking-wider">Session Active</div>
-                                        <div className="text-sm font-bold text-white mb-4">{user.email}</div>
+                                        <div className="text-sm font-bold text-fin-text mb-4">{user.email}</div>
                                         <button
                                             onClick={() => {
                                                 logout();
@@ -195,7 +195,7 @@ const Navbar = () => {
                                     </div>
                                 ) : (
                                     <div className="px-3 flex flex-col gap-3">
-                                        <Link to="/login" className="text-sm font-bold text-fin-muted hover:text-white transition-colors">Login Account</Link>
+                                        <Link to="/login" className="text-sm font-bold text-fin-muted hover:text-fin-text transition-colors">Login Account</Link>
                                         <Link to="/register" className="text-sm font-bold text-fin-accent hover:text-fin-accent/80 transition-colors">Request Access</Link>
                                     </div>
                                 )}
