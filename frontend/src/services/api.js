@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base URL setup
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 const apiClient = axios.create({
     baseURL: API_URL,
@@ -12,7 +12,36 @@ const apiClient = axios.create({
 
 const USE_MOCK_DATA = false;
 
+// Token helpers for the AuthContext integration
 export const marketAPI = {
+    setToken: (token) => {
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    },
+
+    clearToken: () => {
+        delete apiClient.defaults.headers.common['Authorization'];
+    },
+
+    login: async (email, password) => {
+        const formData = new URLSearchParams();
+        formData.append('username', email); // OAuth2 expects 'username' instead of 'email'
+        formData.append('password', password);
+
+        const response = await axios.post(`${API_URL}/auth/login`, formData, {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+        return response.data;
+    },
+
+    register: async (name, email, password) => {
+        const response = await apiClient.post('/auth/register', { name, email, password });
+        return response.data;
+    },
+
+    getCurrentUser: async () => {
+        const response = await apiClient.get('/auth/me');
+        return response.data;
+    },
     getDashboard: async (ticker = "AAPL") => {
         try {
             if (USE_MOCK_DATA) return getMockDashboardData();

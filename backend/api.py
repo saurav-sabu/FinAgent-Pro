@@ -14,6 +14,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.agent.controller import FinanceAgent
 from backend.agent.router import router, set_agent
+from backend.agent.auth_router import router as auth_router
+from backend.database import engine
+from backend import models
 from backend.utils.logger import logger
 from backend.utils.settings import settings
 
@@ -42,6 +45,11 @@ async def lifespan(app: FastAPI):
     # Inject the initialized agent into the router module
     set_agent(agent_instance)
 
+    logger.info("Initializing NeonDB (PostgreSQL) Database schema...")
+    async with engine.begin() as conn:
+        # Create all tables securely against the cloud instance
+        await conn.run_sync(models.Base.metadata.create_all)
+        
     logger.info("Finance Agent initialized and injected into router.")
     logger.info("FinAgent-Pro is ready - API is live.")
 
@@ -71,5 +79,6 @@ app.add_middleware(
 )
 
 # Register the agent-related routes with the application
+app.include_router(auth_router)
 app.include_router(router)
 

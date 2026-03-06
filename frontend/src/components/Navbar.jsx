@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { LineChart, MessageSquareText, Newspaper, Menu, X, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const location = useLocation();
+    const { user, logout } = useAuth();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -30,8 +32,8 @@ const Navbar = () => {
     return (
         <nav
             className={`fixed top-0 w-full z-50 transition-all duration-300 ${isScrolled
-                    ? 'bg-fin-bg/80 backdrop-blur-lg border-b border-fin-border shadow-md'
-                    : 'bg-fin-bg border-b border-transparent'
+                ? 'bg-fin-bg/80 backdrop-blur-lg border-b border-fin-border shadow-md'
+                : 'bg-fin-bg border-b border-transparent'
                 }`}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -68,6 +70,32 @@ const Navbar = () => {
                                 </NavLink>
                             );
                         })}
+                    </div>
+
+                    {/* Desktop Authenticated View */}
+                    <div className="hidden md:flex items-center space-x-4">
+                        {user ? (
+                            <div className="flex items-center gap-4">
+                                <div className="text-sm font-medium text-fin-muted">
+                                    Operator <span className="text-white font-bold">{user.name}</span>
+                                </div>
+                                <button
+                                    onClick={logout}
+                                    className="text-xs px-3 py-1.5 rounded-md border border-fin-border/50 text-fin-muted hover:text-white hover:bg-fin-red/10 hover:border-fin-red/30 transition-all font-bold uppercase tracking-wider"
+                                >
+                                    Log Out
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-3">
+                                <Link to="/login" className="text-sm font-bold text-fin-muted hover:text-white transition-colors">
+                                    Login
+                                </Link>
+                                <Link to="/register" className="text-xs font-bold bg-fin-accent/10 text-fin-accent border border-fin-accent/30 px-3 py-1.5 rounded-md hover:bg-fin-accent/20 transition-all uppercase tracking-wider">
+                                    Register
+                                </Link>
+                            </div>
+                        )}
                     </div>
 
                     {/* Mobile menu button */}
@@ -110,6 +138,29 @@ const Navbar = () => {
                                     </NavLink>
                                 );
                             })}
+
+                            <div className="border-t border-fin-border/50 mt-4 pt-4 pb-2">
+                                {user ? (
+                                    <div className="px-3">
+                                        <div className="text-xs text-fin-muted mb-3 font-medium uppercase tracking-wider">Session Active</div>
+                                        <div className="text-sm font-bold text-white mb-4">{user.email}</div>
+                                        <button
+                                            onClick={() => {
+                                                logout();
+                                                setMobileMenuOpen(false);
+                                            }}
+                                            className="w-full text-left text-sm font-bold text-fin-red hover:text-fin-red/80 transition-colors"
+                                        >
+                                            Log Out Terminal
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="px-3 flex flex-col gap-3">
+                                        <Link to="/login" className="text-sm font-bold text-fin-muted hover:text-white transition-colors">Login Account</Link>
+                                        <Link to="/register" className="text-sm font-bold text-fin-accent hover:text-fin-accent/80 transition-colors">Request Access</Link>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </motion.div>
                 )}

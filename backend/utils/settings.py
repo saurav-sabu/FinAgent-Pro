@@ -48,6 +48,12 @@ class Settings(BaseSettings):
     # MarketAux API token (https://marketaux.com) — used for US/global news
     MARKETAUX_API_KEY: str
 
+    # NeonDB Connection URL
+    DATABASE_URL: str
+
+    # JWT Authentication signing secret
+    SECRET_KEY: str
+
 
 
 
