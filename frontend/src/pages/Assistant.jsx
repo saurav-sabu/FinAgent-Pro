@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, Loader2 } from 'lucide-react';
 import ChatMessage from '../components/ChatMessage';
 import { marketAPI } from '../services/api';
+import useKeyPress from '../hooks/useKeyPress';
 
 const Assistant = () => {
     const [messages, setMessages] = useState([
@@ -18,6 +19,14 @@ const Assistant = () => {
     useEffect(() => {
         scrollToBottom();
     }, [messages, isLoading]);
+
+    // Global Hotkey Binding
+    useKeyPress('Enter', (e) => {
+        // Only trigger if we actually typed something avoiding empty submissions
+        if (input.trim() && !isLoading) {
+            handleSubmit(e);
+        }
+    }, { prevent: true, allowInInput: true });
 
     const handleSubmit = async (e) => {
         e.preventDefault();

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Loader2, Zap, CalendarDays, Search } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2, Zap, CalendarDays, Search, Download, Image as ImageIcon, FileSpreadsheet } from 'lucide-react';
 import IndexCard from '../components/IndexCard';
 import StockCard from '../components/StockCard';
 import MainChart from '../components/MainChart';
@@ -10,17 +10,23 @@ import AiInsight from '../components/AiInsight';
 import RiskGauge from '../components/RiskGauge';
 import SectorHeatmap from '../components/SectorHeatmap';
 import { marketAPI } from '../services/api';
+import { exportChartAsPNG, exportDataAsCSV } from '../utils/export';
 
 const Dashboard = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [ticker, setTicker] = useState("AAPL");
     const [searchInput, setSearchInput] = useState("AAPL");
+    const [timeFrame, setTimeFrame] = useState("6M");
+    const [showExportMenu, setShowExportMenu] = useState(false);
+
+    const chartRef = useRef(null);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const result = await marketAPI.getDashboard(ticker);
+                // Pass optional timeFrame if your backend supports it, otherwise visual state only
+                const result = await marketAPI.getDashboard(ticker, timeFrame);
                 setData(result);
             } catch (error) {
                 console.error("Failed to load dashboard data", error);
@@ -34,7 +40,7 @@ const Dashboard = () => {
         // Simulate real-time updates every 15s
         const interval = setInterval(fetchData, 15000);
         return () => clearInterval(interval);
-    }, [ticker]);
+    }, [ticker, timeFrame]);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -70,7 +76,7 @@ const Dashboard = () => {
                 </div>
 
                 <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <form onSubmit={handleSearch} className="relative w-full sm:w-64">
+                    <form onSubmit={handleSearch} className="tour-search relative w-full sm:w-64">
                         <input
                             type="text"
                             value={searchInput}
@@ -128,17 +134,65 @@ const Dashboard = () => {
                                     </div>
                                 )}
                             </div>
-                            <div className="flex gap-1 bg-fin-bg/50 p-1 rounded-lg border border-fin-border/50 self-end lg:self-auto">
-                                {['1D', '1W', '1M', '6M', 'YTD'].map(tf => (
-                                    <button key={tf} className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${tf === '6M' ? 'bg-fin-accent/20 text-fin-accent shadow-sm' : 'text-fin-muted hover:text-fin-text hover:bg-fin-card'}`}>
-                                        {tf}
+                            <div className="flex items-center gap-2">
+                                <div className="tour-timeframe flex gap-1 bg-fin-bg/50 p-1 rounded-lg border border-fin-border/50 self-end lg:self-auto">
+                                    {['1D', '1W', '1M', '3M', '6M', 'YTD'].map(tf => (
+                                        <button
+                                            key={tf}
+                                            onClick={() => setTimeFrame(tf)}
+                                            className={`px-3 py-1 text-xs rounded-md font-medium transition-all ${tf === timeFrame ? 'bg-fin-accent/20 text-fin-accent shadow-sm' : 'text-fin-muted hover:text-fin-text hover:bg-fin-card'}`}
+                                        >
+                                            {tf}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="tour-export relative">
+                                    <button
+                                        onClick={() => setShowExportMenu(!showExportMenu)}
+                                        className="p-1.5 rounded-lg bg-fin-bg/50 border border-fin-border/50 text-fin-muted hover:text-white hover:bg-fin-card transition-colors"
+                                        title="Export Data"
+                                    >
+                                        <Download className="w-4 h-4" />
                                     </button>
-                                ))}
+
+                                    <AnimatePresence>
+                                        {showExportMenu && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                className="absolute right-0 top-full mt-2 w-48 bg-fin-card border border-fin-border shadow-xl rounded-lg overflow-hidden z-50 flex flex-col"
+                                            >
+                                                <button
+                                                    onClick={() => {
+                                                        exportChartAsPNG(chartRef, `${ticker}-chart.png`);
+                                                        setShowExportMenu(false);
+                                                    }}
+                                                    className="flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-fin-card-hover transition-colors border-b border-fin-border/50"
+                                                >
+                                                    <ImageIcon className="w-4 h-4 text-fin-accent" />
+                                                    Export as PNG
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        exportDataAsCSV(data.stockDetails, `${ticker}-data.csv`);
+                                                        setShowExportMenu(false);
+                                                    }}
+                                                    className="flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-fin-card-hover transition-colors"
+                                                >
+                                                    <FileSpreadsheet className="w-4 h-4 text-fin-green" />
+                                                    Download CSV
+                                                </button>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="w-full h-[350px] lg:h-[400px] relative z-10">
-                            <MainChart data={data.stockDetails} />
+                        <div className="tour-chart w-full h-[350px] lg:h-[400px] relative z-10">
+                            <MainChart data={data.stockDetails} chartRef={chartRef} />
                         </div>
                         <div className="w-full h-[120px] relative z-10 mt-4 border-t border-fin-border/30 pt-4">
                             <VolumeChart data={data.stockDetails} />
@@ -156,6 +210,7 @@ const Dashboard = () => {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.5, delay: 0.1 }}
+                        className="tour-insight"
                     >
                         <AiInsight ticker={data.stockDetails?.ticker || "AAPL"} />
                     </motion.div>

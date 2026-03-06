@@ -1,14 +1,31 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { LineChart, MessageSquareText, Newspaper, Menu, X, Activity } from 'lucide-react';
+import { LineChart, MessageSquareText, Newspaper, Menu, X, Activity, Sun, Moon, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import useKeyPress from '../hooks/useKeyPress';
 
 const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const location = useLocation();
     const { user, logout } = useAuth();
+    const { isDark, toggleTheme } = useTheme();
+    const searchRef = useRef(null);
+
+    // Global shortcut mapping
+    useKeyPress('/', () => {
+        if (searchRef.current) {
+            searchRef.current.focus();
+        }
+    }, { prevent: true });
+
+    useKeyPress('Escape', () => {
+        if (mobileMenuOpen) {
+            setMobileMenuOpen(false);
+        }
+    });
 
     useEffect(() => {
         const handleScroll = () => {
@@ -72,12 +89,28 @@ const Navbar = () => {
                         })}
                     </div>
 
-                    {/* Desktop Authenticated View */}
-                    <div className="hidden md:flex items-center space-x-4">
+                    {/* Desktop Authenticated View & Theme Toggle */}
+                    <div className="hidden md:flex items-center space-x-6">
+                        <button
+                            onClick={toggleTheme}
+                            className="p-2 rounded-full text-fin-muted hover:text-white hover:bg-fin-card transition-colors outline-none"
+                            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                        >
+                            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                        </button>
+
                         {user ? (
                             <div className="flex items-center gap-4">
                                 <div className="text-sm font-medium text-fin-muted">
                                     Operator <span className="text-white font-bold">{user.name}</span>
+                                </div>
+
+                                {/* Quick Search Hotkey Hint */}
+                                <div className="hidden lg:flex items-center text-xs text-fin-muted bg-fin-bg px-2 py-1 rounded-md border border-fin-border">
+                                    <Search className="w-3 h-3 mr-1" />
+                                    <span>Press</span>
+                                    <kbd className="mx-1 px-1.5 py-0.5 bg-fin-card rounded text-fin-text border border-fin-border/50 font-mono font-bold">/</kbd>
+                                    <span>to search</span>
                                 </div>
                                 <button
                                     onClick={logout}
@@ -98,8 +131,14 @@ const Navbar = () => {
                         )}
                     </div>
 
-                    {/* Mobile menu button */}
-                    <div className="flex items-center md:hidden">
+                    {/* Mobile menu and theme buttons */}
+                    <div className="flex items-center md:hidden space-x-2">
+                        <button
+                            onClick={toggleTheme}
+                            className="p-2 rounded-md text-fin-muted hover:text-white transition-colors outline-none"
+                        >
+                            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                        </button>
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             className="inline-flex items-center justify-center p-2 rounded-md text-fin-muted hover:text-white hover:bg-fin-card transition-colors outline-none"

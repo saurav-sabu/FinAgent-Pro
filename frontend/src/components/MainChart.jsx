@@ -13,6 +13,7 @@ import {
 import { Chart } from 'react-chartjs-2';
 import 'chartjs-adapter-date-fns';
 import { CandlestickController, CandlestickElement } from 'chartjs-chart-financial';
+import { useTheme } from '../context/ThemeContext';
 
 ChartJS.register(
     CategoryScale,
@@ -28,6 +29,8 @@ ChartJS.register(
 );
 
 const MainChart = ({ data }) => {
+    const { isDark } = useTheme();
+
     if (!data || !data.chart_dates) return null;
 
     const candleSeries = data.chart_dates.map((date, index) => ({
@@ -89,15 +92,41 @@ const MainChart = ({ data }) => {
     const options = {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
         plugins: {
             legend: {
                 display: true,
                 position: 'top',
-                labels: { color: '#cbd5e1' }
+                labels: { color: isDark ? '#cbd5e1' : '#64748b' }
             },
             tooltip: {
-                mode: 'index',
-                intersect: false,
+                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                bodyColor: isDark ? '#cbd5e1' : '#475569',
+                borderColor: isDark ? '#334155' : '#e2e8f0',
+                borderWidth: 1,
+                padding: 10,
+                callbacks: {
+                    label: function (context) {
+                        let label = context.dataset.label || '';
+                        if (label === 'Price') {
+                            const point = context.raw;
+                            return [
+                                `O: $${point.o.toFixed(2)}`,
+                                `H: $${point.h.toFixed(2)}`,
+                                `L: $${point.l.toFixed(2)}`,
+                                `C: $${point.c.toFixed(2)}`
+                            ];
+                        }
+                        if (context.parsed.y !== null) {
+                            label += ': $' + context.parsed.y.toFixed(2);
+                        }
+                        return label;
+                    }
+                }
             }
         },
         scales: {
@@ -107,19 +136,19 @@ const MainChart = ({ data }) => {
                     tooltipFormat: 'MMM d, yyyy',
                 },
                 grid: {
-                    color: '#2a3441',
+                    color: isDark ? '#2a3441' : '#e2e8f0',
                 },
                 ticks: {
-                    color: '#64748b',
+                    color: isDark ? '#64748b' : '#94a3b8',
                     maxTicksLimit: 10
                 }
             },
             y: {
                 grid: {
-                    color: '#2a3441',
+                    color: isDark ? '#2a3441' : '#e2e8f0',
                 },
                 ticks: {
-                    color: '#64748b',
+                    color: isDark ? '#64748b' : '#94a3b8',
                     callback: function (value) {
                         return '$' + value.toFixed(2);
                     }
