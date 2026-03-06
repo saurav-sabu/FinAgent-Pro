@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, Zap, CalendarDays } from 'lucide-react';
+import { Loader2, Zap, CalendarDays, Search } from 'lucide-react';
 import IndexCard from '../components/IndexCard';
 import StockCard from '../components/StockCard';
 import MainChart from '../components/MainChart';
@@ -14,11 +14,13 @@ import { marketAPI } from '../services/api';
 const Dashboard = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [ticker, setTicker] = useState("AAPL");
+    const [searchInput, setSearchInput] = useState("AAPL");
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const result = await marketAPI.getDashboard();
+                const result = await marketAPI.getDashboard(ticker);
                 setData(result);
             } catch (error) {
                 console.error("Failed to load dashboard data", error);
@@ -27,11 +29,19 @@ const Dashboard = () => {
             }
         };
 
+        setLoading(true);
         fetchData();
         // Simulate real-time updates every 15s
         const interval = setInterval(fetchData, 15000);
         return () => clearInterval(interval);
-    }, []);
+    }, [ticker]);
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        if (searchInput.trim()) {
+            setTicker(searchInput.toUpperCase().trim());
+        }
+    };
 
     if (loading || !data) {
         return (
@@ -58,11 +68,27 @@ const Dashboard = () => {
                         Live market data active
                     </p>
                 </div>
-                <div className="hidden sm:block glass-panel px-4 py-2 border-fin-border/50">
-                    <div className="text-right flex items-center gap-4">
-                        <div className="text-sm text-fin-muted font-medium">S&P 500</div>
-                        <div className="text-lg font-bold text-fin-green flex items-center gap-1.5 justify-end">
-                            {data.indices && data.indices.length > 0 ? data.indices[0].value : '---'} <Zap className="w-4 h-4 fill-fin-green" />
+
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                    <form onSubmit={handleSearch} className="relative w-full sm:w-64">
+                        <input
+                            type="text"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            placeholder="Enter Ticker (e.g., TSLA)"
+                            className="w-full bg-fin-bg border border-fin-border rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-fin-accent/50 focus:ring-1 focus:ring-fin-accent/30 uppercase placeholder:normal-case font-bold"
+                            maxLength={5}
+                        />
+                        <Search className="w-4 h-4 text-fin-muted absolute left-3 top-1/2 -translate-y-1/2" />
+                        <button type="submit" className="hidden" />
+                    </form>
+
+                    <div className="hidden sm:block glass-panel px-4 py-2 border-fin-border/50 shrink-0">
+                        <div className="text-right flex items-center gap-4">
+                            <div className="text-sm text-fin-muted font-medium">S&P 500</div>
+                            <div className="text-lg font-bold text-fin-green flex items-center gap-1.5 justify-end">
+                                {data.indices && data.indices.length > 0 ? data.indices[0].value : '---'} <Zap className="w-4 h-4 fill-fin-green" />
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -22,6 +22,7 @@ from backend.services.news_service import news_service
 from backend.services.dashboard_service import dashboard_service
 from backend.utils.limiter import rate_limit
 from backend.utils.logger import logger
+from backend.utils.cache import ttl_cache
 
 # Router for /health, /analyze, and /news endpoints
 router = APIRouter()
@@ -94,6 +95,7 @@ async def analyze(request: Request, body: QueryRequest) -> StreamingResponse:
     summary="Get latest market news",
     response_description="Latest news items for the requested region and optional ticker",
 )
+@ttl_cache(ttl_seconds=120)
 async def get_latest_market_news(
     request: Request,
     region: NewsRegion = NewsRegion.GLOBAL,
@@ -119,11 +121,13 @@ async def get_latest_market_news(
 
 
 @router.get("/dashboard",response_model=DashboardResponse,tags=["Market Data"], dependencies=[Depends(rate_limit(20, 10))])
+@ttl_cache(ttl_seconds=120)
 async def get_dashboard(request:Request,ticker:str="AAPL"):
     data = await dashboard_service.get_dashboard_data(ticker)
     return data
 
 @router.get("/dashboard/insight", response_model=InsightResponse, tags=["Market Data"], dependencies=[Depends(rate_limit(10, 10))])
+@ttl_cache(ttl_seconds=300)
 async def get_dashboard_insight(request: Request, ticker: str = "AAPL"):
     """
     Generate an AI-powered stock sentiment overview.
@@ -141,7 +145,7 @@ async def get_dashboard_insight(request: Request, ticker: str = "AAPL"):
         bullets = []
         rec = "Hold"
         
-        lines = [line.strip() for line in raw_response.split('\\n') if line.strip()]
+        lines = [line.strip() for line in raw_response.split('\n') if line.strip()]
         for line in lines:
             if line.startswith("Sentiment:"):
                 sentiment = line.replace("Sentiment:", "").strip()
