@@ -81,9 +81,8 @@ const Dashboard = () => {
                             type="text"
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
-                            placeholder="Enter Ticker (e.g., TSLA)"
+                            placeholder="Enter Ticker (e.g., TSLA, RELIANCE.NS)"
                             className="w-full bg-fin-bg border border-fin-border rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-fin-accent/50 focus:ring-1 focus:ring-fin-accent/30 uppercase placeholder:normal-case font-bold"
-                            maxLength={5}
                         />
                         <Search className="w-4 h-4 text-fin-muted absolute left-3 top-1/2 -translate-y-1/2" />
                         <button type="submit" className="hidden" />
