@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Assistant from './pages/Assistant';
 import Analytics from './pages/Analytics';
 import News from './pages/News';
+import Portfolio from './pages/Portfolio';
 import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -49,6 +50,7 @@ function App() {
                   <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                   <Route path="/assistant" element={<ProtectedRoute><Assistant /></ProtectedRoute>} />
                   <Route path="/news" element={<ProtectedRoute><News /></ProtectedRoute>} />
+                  <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
                 </Routes>
               </ErrorBoundary>
             </main>

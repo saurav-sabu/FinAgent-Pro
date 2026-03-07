@@ -259,6 +259,26 @@ export const marketAPI = {
             console.error(`Error toggling watchlist for ${ticker}`, error);
             throw error;
         }
+    },
+
+    getPortfolioSummary: async () => {
+        try {
+            const response = await apiClient.get('/api/portfolio/summary');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching portfolio summary', error);
+            throw error;
+        }
+    },
+
+    addTransaction: async (transaction) => {
+        try {
+            const response = await apiClient.post('/api/portfolio/transaction', transaction);
+            return response.data;
+        } catch (error) {
+            console.error('Error adding transaction', error);
+            throw error;
+        }
     }
 };
 

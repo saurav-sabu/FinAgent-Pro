@@ -16,6 +16,8 @@ class User(Base):
     # Relationships
     watchlists = relationship("WatchlistItem", back_populates="user", cascade="all, delete-orphan")
     chat_messages = relationship("ChatMessage", back_populates="user", cascade="all, delete-orphan")
+    portfolio_items = relationship("PortfolioItem", back_populates="user", cascade="all, delete-orphan")
+    transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
 
 
 class WatchlistItem(Base):
@@ -41,3 +43,32 @@ class ChatMessage(Base):
 
     # Relationship
     user = relationship("User", back_populates="chat_messages")
+
+
+class PortfolioItem(Base):
+    __tablename__ = "portfolio_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    ticker = Column(String, nullable=False, index=True)
+    shares = Column(Float, default=0.0)
+    average_cost = Column(Float, default=0.0)
+    last_updated = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
+
+    # Relationship
+    user = relationship("User", back_populates="portfolio_items")
+
+
+class Transaction(Base):
+    __tablename__ = "transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    ticker = Column(String, nullable=False, index=True)
+    type = Column(String, nullable=False) # 'BUY' or 'SELL'
+    shares = Column(Float, nullable=False)
+    price = Column(Float, nullable=False)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationship
+    user = relationship("User", back_populates="transactions")

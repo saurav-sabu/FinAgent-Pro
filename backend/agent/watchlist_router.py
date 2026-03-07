@@ -83,21 +83,26 @@ async def get_watchlist(
         for item in items:
             ticker = item.ticker
             try:
-                # Handle single vs multiple ticker response structures from yfinance
-                if len(tickers) == 1:
-                    hist = data
+                # yf.download with group_by='ticker' always returns MultiIndex
+                # even for a single ticker. Let's access it safely.
+                if ticker in data.columns.levels[0]:
+                    hist = data[ticker]
                 else:
-                    hist = data[ticker] if ticker in data else None
+                    hist = None
                     
                 if hist is not None and not hist.empty and len(hist) >= 2:
-                    current_price = hist["Close"].iloc[-1]
-                    # Can be float or item sequence depending on yfinance version, safe cast
-                    current_price = float(current_price.iloc[0] if isinstance(current_price, pd.Series) else current_price)
-                    
-                    prev_price = hist["Close"].iloc[-2]
-                    prev_price = float(prev_price.iloc[0] if isinstance(prev_price, pd.Series) else prev_price)
-                    
-                    change_pct = ((current_price - prev_price) / prev_price) * 100
+                    # Get the most recent two close prices
+                    closes = hist["Close"].dropna()
+                    if len(closes) >= 2:
+                        current_price = float(closes.iloc[-1])
+                        prev_price = float(closes.iloc[-2])
+                        change_pct = ((current_price - prev_price) / prev_price) * 100
+                    else:
+                        current_price = float(closes.iloc[-1]) if not closes.empty else 0.0
+                        change_pct = 0.0
+                elif hist is not None and not hist.empty:
+                    current_price = float(hist["Close"].iloc[-1])
+                    change_pct = 0.0
                 else:
                      current_price = 0.0
                      change_pct = 0.0
