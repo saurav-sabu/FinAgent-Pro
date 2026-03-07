@@ -81,6 +81,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/")
+async def root():
+    return {
+        "status": "online",
+        "message": "FinAgent-Pro API is running. Access the frontend at your Vercel URL or hit /api for endpoints.",
+        "documentation": "/docs"
+    }
+
 # Register the agent-related routes with the application
 app.include_router(auth_router, prefix="/api")
 app.include_router(router, prefix="/api")
