@@ -19,16 +19,12 @@ import remarkGfm from 'remark-gfm';
 import { Chart } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
-    ArcElement,
-    Tooltip,
-    Legend,
-    CategoryScale,
-    LinearScale
+    registerables
 } from 'chart.js';
 import { marketAPI } from '../services/api';
 import TransactionModal from '../components/TransactionModal';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
+ChartJS.register(...registerables);
 
 const Portfolio = () => {
     const [data, setData] = useState(null);

@@ -82,8 +82,8 @@ app.add_middleware(
 )
 
 # Register the agent-related routes with the application
-app.include_router(auth_router)
-app.include_router(router)
+app.include_router(auth_router, prefix="/api")
+app.include_router(router, prefix="/api")
 app.include_router(analytics_router)
 app.include_router(watchlist_router)
 app.include_router(portfolio_router)

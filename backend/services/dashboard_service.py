@@ -114,8 +114,8 @@ class DashboardService:
                     change_pct = ((current_close - prev_close) / prev_close) * 100
                     data[name] = {
                         "name": name,
-                        "price": round(current_close, 2),
-                        "change_percent": round(change_pct, 2),
+                        "price": round(float(current_close), 2) if current_close is not None else 0.0,
+                        "change_percent": round(float(change_pct), 2) if change_pct is not None else 0.0,
                         "currency": stock.info.get("currency", "USD") if stock.info else "USD"
                     }
             except Exception as e:
@@ -144,9 +144,9 @@ class DashboardService:
                         {
                             "ticker": symbol,
                             "name": name,
-                            "price": round(current_close, 2),
-                            "change_percent": round(change_pct, 2),
-                            "volume": int(vol),
+                            "price": round(float(current_close), 2) if current_close is not None else 0.0,
+                            "change_percent": round(float(change_pct), 2) if change_pct is not None else 0.0,
+                            "volume": int(vol) if vol is not None else 0,
                             "currency": stock.info.get("currency", "USD") if stock.info else "USD"
                         }
                     )
@@ -215,29 +215,29 @@ class DashboardService:
 
         price_details = {
             "ticker": ticker,
-            "name": stock.info.get("longName", ""),
-            "sector": stock.info.get("sector", ""),
-            "price": round(latest["Close"], 2),
-            "change": round(price_change, 2),
-            "change_percent": round(price_change_pct, 2),
-            "open": round(latest["Open"], 2),
-            "previous_close": round(prev["Close"], 2),
-            "day_high": round(latest["High"], 2),
-            "day_low": round(latest["Low"], 2),
-            "volume": int(latest["Volume"]),
-            "market_cap": stock.info.get("marketCap", None),
-            "five_two_week_high": round(stock.info.get("fiftyTwoWeekHigh", 0), 2),
-            "five_two_week_low": round(stock.info.get("fiftyTwoWeekLow", 0), 2),
+            "name": stock.info.get("longName", ticker),
+            "sector": stock.info.get("sector", "N/A"),
+            "price": round(float(latest["Close"]), 2) if not pd.isna(latest["Close"]) else 0.0,
+            "change": round(float(price_change), 2) if not pd.isna(price_change) else 0.0,
+            "change_percent": round(float(price_change_pct), 2) if not pd.isna(price_change_pct) else 0.0,
+            "open": round(float(latest["Open"]), 2) if not pd.isna(latest["Open"]) else 0.0,
+            "previous_close": round(float(prev["Close"]), 2) if not pd.isna(prev["Close"]) else 0.0,
+            "day_high": round(float(latest["High"]), 2) if not pd.isna(latest["High"]) else 0.0,
+            "day_low": round(float(latest["Low"]), 2) if not pd.isna(latest["Low"]) else 0.0,
+            "volume": int(latest["Volume"]) if not pd.isna(latest["Volume"]) else 0,
+            "market_cap": stock.info.get("marketCap", 0),
+            "five_two_week_high": round(float(stock.info.get("fiftyTwoWeekHigh", 0)), 2),
+            "five_two_week_low": round(float(stock.info.get("fiftyTwoWeekLow", 0)), 2),
             "currency": stock.info.get("currency", "USD"),
             "chart_dates": chart_dates,
-            "chart_open": display_hist["Open"].round(2).tolist(),
-            "chart_high": display_hist["High"].round(2).tolist(),
-            "chart_low": display_hist["Low"].round(2).tolist(),
-            "chart_close": display_hist["Close"].round(2).tolist(),
-            "chart_volume": display_hist["Volume"].tolist(),
-            "chart_ma50": [round(x, 2) if x is not None else None for x in disp_ma50],
-            "chart_ma200": [round(x, 2) if x is not None else None for x in disp_ma200],
-            "chart_rsi": [round(x, 2) if x is not None else None for x in disp_rsi],
+            "chart_open": display_hist["Open"].fillna(0).round(2).tolist(),
+            "chart_high": display_hist["High"].fillna(0).round(2).tolist(),
+            "chart_low": display_hist["Low"].fillna(0).round(2).tolist(),
+            "chart_close": display_hist["Close"].fillna(0).round(2).tolist(),
+            "chart_volume": display_hist["Volume"].fillna(0).astype(int).tolist(),
+            "chart_ma50": [round(float(x), 2) if x is not None else None for x in disp_ma50],
+            "chart_ma200": [round(float(x), 2) if x is not None else None for x in disp_ma200],
+            "chart_rsi": [round(float(x), 2) if x is not None else None for x in disp_rsi],
             "earnings_date": earnings
         }
         current_rsi = rsi_series_full.iloc[-1] if not rsi_series_full.empty else 50

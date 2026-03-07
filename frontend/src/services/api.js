@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base URL setup
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const apiClient = axios.create({
     baseURL: API_URL,
@@ -27,94 +27,103 @@ export const marketAPI = {
         formData.append('username', email); // OAuth2 expects 'username' instead of 'email'
         formData.append('password', password);
 
-        const response = await axios.post(`${API_URL}/auth/login`, formData, {
+        const response = await apiClient.post('auth/login', formData, {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         });
         return response.data;
     },
 
     register: async (name, email, password) => {
-        const response = await apiClient.post('/auth/register', { name, email, password });
+        const response = await apiClient.post('auth/register', { name, email, password });
         return response.data;
     },
 
     getCurrentUser: async () => {
-        const response = await apiClient.get('/auth/me');
+        const response = await apiClient.get('auth/me');
         return response.data;
     },
 
     async getPortfolioSummary() {
-        const response = await apiClient.get('/api/portfolio/summary');
+        const response = await apiClient.get('portfolio/summary');
         return response.data;
     },
+
     async getPortfolioReview() {
-        const response = await apiClient.get('/api/portfolio/review');
-        return response.data;
+        try {
+            const response = await apiClient.get('portfolio/review');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching portfolio review', error);
+            throw error;
+        }
     },
+
     async addTransaction(data) {
-        const response = await apiClient.post('/api/portfolio/transaction', data);
+        const response = await apiClient.post('portfolio/transaction', data);
         return response.data;
     },
+
     async getWatchlist() {
-        const response = await apiClient.get('/api/watchlist');
-        return response.data;
+        try {
+            const response = await apiClient.get('watchlist');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching watchlist', error);
+            return [];
+        }
     },
+
     async toggleWatchlist(ticker) {
-        const response = await apiClient.post('/api/watchlist', { ticker });
+        const response = await apiClient.post('watchlist', { ticker });
         return response.data;
     },
+
     getDashboard: async (ticker = "AAPL") => {
         try {
             if (USE_MOCK_DATA) return getMockDashboardData();
 
-            const response = await apiClient.get(`/dashboard?ticker=${ticker}`);
+            const response = await apiClient.get(`dashboard?ticker=${ticker}`);
             const data = response.data;
 
-            // Helper to format volume nicely
             const formatVolume = (vol) => {
                 if (vol >= 1000000) return (vol / 1000000).toFixed(1) + 'M';
                 if (vol >= 1000) return (vol / 1000).toFixed(1) + 'K';
                 return vol.toString();
             };
 
-            // Adapt Backend DashboardResponse schema to Frontend expected structure
             return {
-                // Map backend dict to array of objects expected by IndexCard
                 indices: Object.values(data.indices || {}).map(entry => ({
-                    name: entry.name,
-                    value: entry.price ? entry.price.toLocaleString('en-US', { style: 'currency', currency: entry.currency || 'USD' }) : '---',
-                    change: entry.change_percent
+                    name: entry.name || 'Unknown',
+                    value: (entry.price != null) ? entry.price.toLocaleString('en-US', { style: 'currency', currency: entry.currency || 'USD' }) : '---',
+                    change: entry.change_percent || 0
                 })),
 
-                // Map trending gainers and losers. 
-                // Backend TrendingStock schema: { ticker, name, price, change_percent, volume, currency }
-                // Frontend StockCard expects: { symbol, name, price, change, volume }
                 topGainers: (data.trending?.gainers || []).map(stock => ({
-                    symbol: stock.ticker,
+                    symbol: stock.ticker || 'N/A',
                     name: stock.name || '',
-                    price: stock.price.toLocaleString('en-US', { style: 'currency', currency: stock.currency || 'USD' }),
-                    change: stock.change_percent,
+                    price: (stock.price != null) ? stock.price.toLocaleString('en-US', { style: 'currency', currency: stock.currency || 'USD' }) : '---',
+                    change: stock.change_percent || 0,
                     volume: stock.volume ? formatVolume(stock.volume) : '---'
                 })),
 
                 topLosers: (data.trending?.losers || []).map(stock => ({
-                    symbol: stock.ticker,
+                    symbol: stock.ticker || 'N/A',
                     name: stock.name || '',
-                    price: stock.price.toLocaleString('en-US', { style: 'currency', currency: stock.currency || 'USD' }),
-                    change: stock.change_percent,
+                    price: (stock.price != null) ? stock.price.toLocaleString('en-US', { style: 'currency', currency: stock.currency || 'USD' }) : '---',
+                    change: stock.change_percent || 0,
                     volume: stock.volume ? formatVolume(stock.volume) : '---'
                 })),
 
                 stockDetails: {
                     ...(data.stock_lookup || {}),
-                    ticker: (data.stock_lookup || {}).ticker,
-                    name: (data.stock_lookup || {}).name,
+                    ticker: data.stock_lookup?.ticker || ticker,
+                    name: data.stock_lookup?.name || ticker,
+                    price: data.stock_lookup?.price != null ? data.stock_lookup.price.toLocaleString('en-US', { style: 'currency', currency: data.stock_lookup.currency || 'USD' }) : '---'
                 },
                 sectorPerformance: data.sector_performance || {},
-                riskAnalysis: data.risk_score || {},
+                riskAnalysis: data.risk_score || { score: 0, level: 'Low', reasons: [] },
                 volumeAlert: data.volume_alert || false
             };
-
         } catch (error) {
             console.error('Error fetching dashboard data', error);
             if (USE_MOCK_DATA) return getMockDashboardData();
@@ -130,7 +139,7 @@ export const marketAPI = {
                 summary_bullets: ["Strong earnings report", "High institutional buying", "MACD crossover"],
                 recommendation: "Strong Buy"
             };
-            const response = await apiClient.get(`/dashboard/insight?ticker=${ticker}`);
+            const response = await apiClient.get(`dashboard/insight?ticker=${ticker}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching AI insight', error);
@@ -147,7 +156,6 @@ export const marketAPI = {
     askAssistant: async (message, onChunk) => {
         try {
             if (USE_MOCK_DATA) {
-                // Mock streaming chunk by chunk
                 const mockText = "**Apple Inc. (AAPL)** is currently trading at $185.00 (+1.2%).\n\n### Detailed Analysis\n- **P/E Ratio:** 28.5\n- **EPS:** $6.50\n- **Analyst Consensus:** Strong Buy\n\nThe stock shows positive momentum following strong iPhone sales. Our AI rating gives this a solid growth prospect over the next 12 months.";
                 const words = mockText.split(' ');
                 for (let i = 0; i < words.length; i++) {
@@ -157,8 +165,6 @@ export const marketAPI = {
                 return;
             }
 
-            // Backend expects {"query": "message"}
-            // We use standard fetch here instead of Axios to properly read the ReadableStream
             const response = await fetch(`${API_URL}/analyze`, {
                 method: 'POST',
                 headers: {
@@ -177,19 +183,13 @@ export const marketAPI = {
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-
-                // Decode the byte chunk to string and invoke the callback to update the UI
                 const chunkText = decoder.decode(value, { stream: true });
                 if (onChunk) {
                     onChunk(chunkText);
                 }
             }
-
         } catch (error) {
             console.error('Error with AI assistant', error);
-            if (onChunk && USE_MOCK_DATA) {
-                onChunk("I'm sorry, I couldn't reach the backend server to perform the analysis.");
-            }
             throw error;
         }
     },
@@ -197,15 +197,9 @@ export const marketAPI = {
     getNews: async (symbol, region = "GLOBAL") => {
         try {
             if (USE_MOCK_DATA) return getMockNews(symbol);
-
-            const response = await apiClient.get(`/news?ticker=${symbol}&region=${region}`);
+            const response = await apiClient.get(`news?ticker=${symbol}&region=${region}`);
             const data = response.data;
-
-            // Backend returns NewsResponse { region: ..., items: [{title, description, url, source, published_date, ...}]}
-            // Frontend NewsCard expects { id, headline, source, date, summary, url }
-
             if (!data.items) return [];
-
             return data.items.map((item, index) => ({
                 id: index,
                 headline: item.title,
@@ -214,7 +208,6 @@ export const marketAPI = {
                 summary: item.description || "No description available.",
                 url: item.url
             }));
-
         } catch (error) {
             console.error('Error fetching news', error);
             if (USE_MOCK_DATA) return getMockNews(symbol);
@@ -224,7 +217,7 @@ export const marketAPI = {
 
     getFundamentals: async (ticker) => {
         try {
-            const response = await apiClient.get(`/api/analytics/fundamentals/${ticker}`);
+            const response = await apiClient.get(`analytics/fundamentals/${ticker}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching fundamentals', error);
@@ -234,7 +227,7 @@ export const marketAPI = {
 
     getTechnicals: async (ticker, period = "1y") => {
         try {
-            const response = await apiClient.get(`/api/analytics/technicals/${ticker}?period=${period}`);
+            const response = await apiClient.get(`analytics/technicals/${ticker}?period=${period}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching technical indicators', error);
@@ -244,7 +237,7 @@ export const marketAPI = {
 
     getCalendar: async () => {
         try {
-            const response = await apiClient.get(`/api/analytics/calendar`);
+            const response = await apiClient.get(`analytics/calendar`);
             return response.data;
         } catch (error) {
             console.error('Error fetching economic calendar', error);
@@ -254,50 +247,10 @@ export const marketAPI = {
 
     getSectors: async (region = "US") => {
         try {
-            const response = await apiClient.get(`/api/analytics/sectors?region=${region}`);
+            const response = await apiClient.get(`analytics/sectors?region=${region}`);
             return response.data;
         } catch (error) {
             console.error(`Error fetching sector performance for ${region}`, error);
-            throw error;
-        }
-    },
-
-    getWatchlist: async () => {
-        try {
-            const response = await apiClient.get('/api/watchlist');
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching watchlist', error);
-            return []; // Return empty gracefully if not logged in
-        }
-    },
-
-    toggleWatchlist: async (ticker) => {
-        try {
-            const response = await apiClient.post('/api/watchlist', { ticker });
-            return response.data; // { status: "added" | "removed", ticker }
-        } catch (error) {
-            console.error(`Error toggling watchlist for ${ticker}`, error);
-            throw error;
-        }
-    },
-
-    getPortfolioSummary: async () => {
-        try {
-            const response = await apiClient.get('/api/portfolio/summary');
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching portfolio summary', error);
-            throw error;
-        }
-    },
-
-    addTransaction: async (transaction) => {
-        try {
-            const response = await apiClient.post('/api/portfolio/transaction', transaction);
-            return response.data;
-        } catch (error) {
-            console.error('Error adding transaction', error);
             throw error;
         }
     }

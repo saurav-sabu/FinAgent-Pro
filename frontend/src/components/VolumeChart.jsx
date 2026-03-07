@@ -1,22 +1,12 @@
 import React from 'react';
 import {
     Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    TimeScale,
-    BarElement,
-    Tooltip,
+    registerables
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import 'chartjs-adapter-date-fns';
 
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    TimeScale,
-    BarElement,
-    Tooltip
-);
+ChartJS.register(...registerables);
 
 const VolumeChart = ({ data }) => {
     if (!data || !data.chart_dates) return null;

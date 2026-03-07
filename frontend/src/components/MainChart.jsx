@@ -1,32 +1,11 @@
 import React from 'react';
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    TimeScale,
-    Tooltip,
-    Legend,
-    LineController,
-    LineElement,
-    PointElement,
-} from 'chart.js';
+import { Chart as ChartJS, registerables } from 'chart.js';
 import { Chart } from 'react-chartjs-2';
 import 'chartjs-adapter-date-fns';
 import { CandlestickController, CandlestickElement } from 'chartjs-chart-financial';
 import { useTheme } from '../context/ThemeContext';
 
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    TimeScale,
-    Tooltip,
-    Legend,
-    LineController,
-    LineElement,
-    PointElement,
-    CandlestickController,
-    CandlestickElement
-);
+ChartJS.register(...registerables, CandlestickController, CandlestickElement);
 
 const MainChart = ({ data }) => {
     const { isDark } = useTheme();
@@ -114,11 +93,12 @@ const MainChart = ({ data }) => {
                         let label = context.dataset.label || '';
                         if (label === 'Price') {
                             const point = context.raw;
+                            if (!point || point.o === undefined || point.o === null) return 'Price Data N/A';
                             return [
-                                `O: $${point.o.toFixed(2)}`,
-                                `H: $${point.h.toFixed(2)}`,
-                                `L: $${point.l.toFixed(2)}`,
-                                `C: $${point.c.toFixed(2)}`
+                                `O: $${Number(point.o).toFixed(2)}`,
+                                `H: $${Number(point.h).toFixed(2)}`,
+                                `L: $${Number(point.l).toFixed(2)}`,
+                                `C: $${Number(point.c).toFixed(2)}`
                             ];
                         }
                         if (context.parsed.y !== null) {
@@ -150,7 +130,7 @@ const MainChart = ({ data }) => {
                 ticks: {
                     color: isDark ? '#64748b' : '#94a3b8',
                     callback: function (value) {
-                        return '$' + value.toFixed(2);
+                        return '$' + (typeof value === 'number' ? value.toFixed(2) : value);
                     }
                 }
             }
