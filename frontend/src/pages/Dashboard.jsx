@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Zap, CalendarDays, Search, Download, Image as ImageIcon, FileSpreadsheet, Star } from 'lucide-react';
+import { Loader2, Zap, CalendarDays, Search, Download, Image as ImageIcon, Star } from 'lucide-react';
 import IndexCard from '../components/IndexCard';
 import StockCard from '../components/StockCard';
 import MainChart from '../components/MainChart';
@@ -10,7 +10,7 @@ import AiInsight from '../components/AiInsight';
 import RiskGauge from '../components/RiskGauge';
 import SectorHeatmap from '../components/SectorHeatmap';
 import { marketAPI } from '../services/api';
-import { exportChartAsPNG, exportDataAsCSV } from '../utils/export';
+import { exportChartAsPNG } from '../utils/export';
 
 const Dashboard = () => {
     const [data, setData] = useState(null);
@@ -209,20 +209,10 @@ const Dashboard = () => {
                                                         exportChartAsPNG(chartRef, `${ticker}-chart.png`);
                                                         setShowExportMenu(false);
                                                     }}
-                                                    className="flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-fin-card-hover transition-colors border-b border-fin-border/50"
+                                                    className="flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-fin-card-hover transition-colors"
                                                 >
                                                     <ImageIcon className="w-4 h-4 text-fin-accent" />
                                                     Export as PNG
-                                                </button>
-                                                <button
-                                                    onClick={() => {
-                                                        exportDataAsCSV(data.stockDetails, `${ticker}-data.csv`);
-                                                        setShowExportMenu(false);
-                                                    }}
-                                                    className="flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-fin-card-hover transition-colors"
-                                                >
-                                                    <FileSpreadsheet className="w-4 h-4 text-fin-green" />
-                                                    Download CSV
                                                 </button>
                                             </motion.div>
                                         )}

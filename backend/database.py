@@ -18,7 +18,10 @@ engine = create_async_engine(
     connect_args={"ssl": "require"},
     echo=False,  # Set to True for SQL request logging
     future=True,
-    pool_pre_ping=True
+    pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+    pool_recycle=3600
 )
 
 # Async session factory

@@ -1,41 +1,90 @@
-# FinAgent-Pro
+# 📈 FinAgent-Pro: AI-Powered Market intelligence
 
-A financial AI agent application built with Python and Pydantic.
+**FinAgent-Pro** is a state-of-the-art financial intelligence platform that combines real-time market data with advanced AI-driven analysis. Designed for the modern investor, it provides deep insights into stock sentiment, risk analysis, and portfolio health.
 
-## Today's Updates
+---
 
-### Settings Configuration Implementation
-- Created `backend/utils/settings.py` with centralized application configuration management
-- Implemented `Settings` class using Pydantic's `BaseSettings` for environment variable management
-- Configured automatic loading from `.env` file with ignored extra variables
+## ✨ Key Features
 
-#### Configuration Parameters
-- **MODEL_ID**: LLM model identifier for AI operations
-- **TEMPERATURE**: Model output randomness control (range: 0.0-1.0)
-- **ANTHROPIC_API_KEY**: Anthropic Claude API authentication key
+- 🧠 **AI-Powered Insights**: Leveraging Anthropic Claude for deep sentiment analysis and risk assessment of any stock.
+- 📊 **Dynamic Visualization**: Interactive OHLC Candlestick, Volume, and RSI charts built with Chart.js.
+- 💼 **Portfolio Management**: Comprehensive asset allocation tracking and historical performance review.
+- 🛡️ **Risk Score Index**: Proprietary AI-calculated risk scores (0-10) with detailed reasoning.
+- 📦 **Dockerized Ecosystem**: One-command deployment using Docker & Docker Compose.
+- ☁️ **Cloud Native**: Optimized for Render (Backend) and Vercel (Frontend).
+- 🔐 **Secure Auth**: JWT-based authentication system with encrypted user data.
 
-#### Usage
-```python
-from backend.utils.settings import settings
+---
 
-# Access configuration values
-model = settings.MODEL_ID
-temperature = settings.TEMPERATURE
-api_key = settings.ANTHROPIC_API_KEY
+## 🛠️ Tech Stack
+
+### Backend
+- **Framework**: FastAPI (Python 3.11+)
+- **Database**: NeonDB (Serverless PostgreSQL)
+- **AI Engine**: Anthropic Claude API
+- **Data Source**: YFinance
+- **Auth**: JWT (JSON Web Tokens)
+
+### Frontend
+- **Library**: React 19 + Vite
+- **Styling**: Tailwind CSS + Framer Motion
+- **Charts**: Chart.js v4
+- **Icons**: Lucide React
+
+---
+
+## 🚀 Quick Start (Local Docker)
+
+The fastest way to get started is using Docker Compose:
+
+1. **Clone the Repo**
+   ```bash
+   git clone https://github.com/your-username/FinAgent-Pro.git
+   cd FinAgent-Pro
+   ```
+
+2. **Configure Environment**
+   Create a `.env` in the root and add:
+   ```env
+   ANTHROPIC_API_KEY=your_key_here
+   DATABASE_URL=your_neondb_url_here
+   SECRET_KEY=your_secure_random_string
+   ```
+
+3. **Launch Containers**
+   ```bash
+   docker-compose up -d --build
+   ```
+   *Access the app at [http://localhost](http://localhost)*
+
+---
+
+## 💻 Local Development Setup
+
+### Backend setup
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn backend.api:app --reload
 ```
 
-## Setup Instructions
+### Frontend setup
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-1. Create a `.env` file in the project root with the following variables:
-   ```
-   MODEL_ID=<your-model-id>
-   TEMPERATURE=<0.0-1.0>
-   ANTHROPIC_API_KEY=<your-api-key>
-   ```
+---
 
-2. Install dependencies:
-   ```
-   pip install pydantic-settings
-   ```
+## ☁️ Deployment
 
-3. The global `settings` instance is available for import throughout the application.
+For detailed staging/production deployment instructions, refer to the [Deployment Guide](./deployment_guide.md).
+
+- **Backend**: Render (Python 3 Web Service)
+- **Frontend**: Vercel (Vite Preset)
+
+---
+
+## 📝 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

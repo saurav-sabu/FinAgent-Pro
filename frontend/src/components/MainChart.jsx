@@ -7,7 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 
 ChartJS.register(...registerables, CandlestickController, CandlestickElement);
 
-const MainChart = ({ data }) => {
+const MainChart = ({ data, chartRef }) => {
     const { isDark } = useTheme();
 
     if (!data || !data.chart_dates) return null;
@@ -139,7 +139,7 @@ const MainChart = ({ data }) => {
 
     return (
         <div className="w-full h-full min-h-[300px]">
-            <Chart type="candlestick" options={options} data={chartData} />
+            <Chart ref={chartRef} type="candlestick" options={options} data={chartData} />
         </div>
     );
 };

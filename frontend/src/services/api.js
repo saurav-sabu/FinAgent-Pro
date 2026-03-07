@@ -116,6 +116,13 @@ export const marketAPI = {
 
                 stockDetails: {
                     ...(data.stock_lookup || {}),
+                    chart_dates: data.stock_lookup?.chart_dates || [],
+                    chart_open: data.stock_lookup?.chart_open || [],
+                    chart_high: data.stock_lookup?.chart_high || [],
+                    chart_low: data.stock_lookup?.chart_low || [],
+                    chart_close: data.stock_lookup?.chart_close || [],
+                    chart_ma50: data.stock_lookup?.chart_ma50 || [],
+                    chart_ma200: data.stock_lookup?.chart_ma200 || [],
                     ticker: data.stock_lookup?.ticker || ticker,
                     name: data.stock_lookup?.name || ticker,
                     price: data.stock_lookup?.price != null ? data.stock_lookup.price.toLocaleString('en-US', { style: 'currency', currency: data.stock_lookup.currency || 'USD' }) : '---'
