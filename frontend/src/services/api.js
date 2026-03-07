@@ -42,6 +42,27 @@ export const marketAPI = {
         const response = await apiClient.get('/auth/me');
         return response.data;
     },
+
+    async getPortfolioSummary() {
+        const response = await apiClient.get('/api/portfolio/summary');
+        return response.data;
+    },
+    async getPortfolioReview() {
+        const response = await apiClient.get('/api/portfolio/review');
+        return response.data;
+    },
+    async addTransaction(data) {
+        const response = await apiClient.post('/api/portfolio/transaction', data);
+        return response.data;
+    },
+    async getWatchlist() {
+        const response = await apiClient.get('/api/watchlist');
+        return response.data;
+    },
+    async toggleWatchlist(ticker) {
+        const response = await apiClient.post('/api/watchlist', { ticker });
+        return response.data;
+    },
     getDashboard: async (ticker = "AAPL") => {
         try {
             if (USE_MOCK_DATA) return getMockDashboardData();

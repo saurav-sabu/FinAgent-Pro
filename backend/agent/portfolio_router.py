@@ -173,3 +173,61 @@ async def get_portfolio_summary(
                 "gain_percent": 0.0
             } for h in holdings]
         }
+
+@router.get("/review", response_model=Dict[str, str])
+async def get_portfolio_review(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Generate an AI-driven portfolio review using Claude.
+    """
+    # 1. Get current summary
+    summary = await get_portfolio_summary(current_user, db)
+    
+    if not summary or not summary.get("holdings"):
+        return {
+            "review": "Your portfolio is currently empty. Add some transactions to get a professional AI review!"
+        }
+
+    # 2. Formulate analytical prompt
+    holdings_str = "\n".join([
+        f"- {h['ticker']}: {h['shares']} shares @ ${h['average_cost']} (Market Value: ${h['market_value']}, P&L: {h['gain_percent']}%)"
+        for h in summary['holdings']
+    ])
+    
+    prompt = f"""
+    You are a Senior Wealth Manager. Please perform a professional audit of this client's portfolio:
+    
+    TOTAL VALUE: ${summary['total_value']}
+    TOTAL GAIN/LOSS: ${summary['total_gain']} ({summary['total_gain_percent']}%)
+    
+    HOLDINGS:
+    {holdings_str}
+    
+    Please provide:
+    1. **Diversification Analysis**: Check for over-concentration in sectors or individual assets.
+    2. **Risk Assessment**: Identify potential vulnerabilities (volatility, macro exposure).
+    3. **Actionable Suggestions**: Specific rebalancing advice or 'Stay the Course' recommendations.
+    4. **Health Score**: A single numeric score from 1-10 with a brief justification.
+    
+    Use a professional, encouraging, yet critically analytical tone. Format with clear markdown headings.
+    """
+    
+    try:
+        from backend.agent.router import agent
+        if agent is None:
+            raise HTTPException(
+                status_code=503, 
+                detail="AI Wealth Manager is still calibrating. Please try again in 30 seconds."
+            )
+        review_content = await agent.analyze(prompt)
+        return {"review": review_content}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"AI Portfolio Review failed: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail=f"The AI Wealth Manager is currently busy: {str(e)}"
+        )

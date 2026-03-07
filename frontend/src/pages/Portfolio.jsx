@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Wallet,
     TrendingUp,
@@ -8,8 +8,14 @@ import {
     Plus,
     ArrowUpRight,
     ArrowDownRight,
-    Loader2
+    Loader2,
+    Sparkles,
+    Brain,
+    X,
+    Info
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Chart } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
@@ -28,6 +34,9 @@ const Portfolio = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [review, setReview] = useState(null);
+    const [reviewLoading, setReviewLoading] = useState(false);
+    const [showReview, setShowReview] = useState(false);
 
     const fetchPortfolio = async () => {
         try {
@@ -44,6 +53,20 @@ const Portfolio = () => {
     useEffect(() => {
         fetchPortfolio();
     }, []);
+
+    const handleReview = async () => {
+        setReviewLoading(true);
+        setShowReview(true);
+        try {
+            const res = await marketAPI.getPortfolioReview();
+            setReview(res.review);
+        } catch (error) {
+            console.error("AI Review failed:", error);
+            setReview("Failed to generate AI review. Technical analysts are investigating.");
+        } finally {
+            setReviewLoading(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -94,13 +117,23 @@ const Portfolio = () => {
                         Live wealth tracking active
                     </p>
                 </div>
-                <button
-                    onClick={() => setShowModal(true)}
-                    className="btn-primary flex items-center gap-2 px-6 py-2.5"
-                >
-                    <Plus className="w-4 h-4" />
-                    Add Transaction
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        disabled={loading || reviewLoading}
+                        onClick={handleReview}
+                        className="btn-secondary flex items-center gap-2 px-6 py-2.5 bg-fin-accent/10 border-fin-accent/20 text-fin-accent hover:bg-fin-accent/20"
+                    >
+                        {reviewLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                        Review with AI
+                    </button>
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="btn-primary flex items-center gap-2 px-6 py-2.5"
+                    >
+                        <Plus className="w-4 h-4" />
+                        Add Transaction
+                    </button>
+                </div>
             </div>
 
             {/* Summary Grid */}
@@ -151,9 +184,9 @@ const Portfolio = () => {
                             {hasHoldings ? data.holdings.slice(0, 6).map((h, i) => (
                                 <div key={h.ticker || i} className="flex items-center gap-2">
                                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4'][i % 7] }} />
-                                    <span className="text-xs font-bold text-white uppercase">{h.ticker}</span>
+                                    <span className="text-xs font-bold text-white uppercase">{h.ticker || 'N/A'}</span>
                                     <span className="text-xs text-fin-muted ml-auto">
-                                        {data.total_value > 0 ? ((h.market_value / data.total_value) * 100).toFixed(0) : 0}%
+                                        {data.total_value > 0 ? (((h.market_value || 0) / data.total_value) * 100).toFixed(0) : 0}%
                                     </span>
                                 </div>
                             )) : (
@@ -217,6 +250,93 @@ const Portfolio = () => {
                     </table>
                 </div>
             </motion.div>
+
+            {/* AI Review Sidebar */}
+            <AnimatePresence>
+                {showReview && (
+                    <div key="review-container">
+                        <motion.div
+                            key="review-backdrop"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowReview(false)}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110]"
+                        />
+                        <motion.div
+                            key="review-panel"
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            className="fixed top-0 right-0 bottom-0 w-full max-w-xl bg-fin-bg border-l border-fin-border z-[120] shadow-2xl flex flex-col"
+                        >
+                            <div className="p-6 border-b border-fin-border bg-fin-card flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-fin-accent/10 rounded-lg">
+                                        <Brain className="w-5 h-5 text-fin-accent" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-white">AI Portfolio Auditor</h2>
+                                        <p className="text-xs text-fin-muted">Powered by Claude Analytic Engine</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setShowReview(false)}
+                                    className="p-2 hover:bg-fin-bg rounded-xl transition-colors"
+                                >
+                                    <X className="w-5 h-5 text-fin-muted" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                                {reviewLoading ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
+                                        <div className="relative">
+                                            <div className="w-16 h-16 border-4 border-fin-accent/20 border-t-fin-accent rounded-full animate-spin" />
+                                            <Sparkles className="w-6 h-6 text-fin-accent absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-white text-lg">Analyzing Markets...</h3>
+                                            <p className="text-fin-muted text-sm max-w-[250px]">Claude is cross-referencing your holdings with macro trends.</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="prose prose-invert prose-sm max-w-none">
+                                        <div className="p-4 bg-fin-accent/5 border border-fin-accent/10 rounded-xl mb-6 flex gap-3">
+                                            <Info className="w-5 h-5 text-fin-accent shrink-0" />
+                                            <p className="text-[11px] leading-relaxed text-fin-muted italic">
+                                                Note: This analysis is AI-generated for informational purposes and does not constitute formal financial advice.
+                                            </p>
+                                        </div>
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                            components={{
+                                                h1: ({ node, ...props }) => <h1 className="text-xl font-bold text-white mt-8 mb-4 border-b border-fin-border pb-2" {...props} />,
+                                                h2: ({ node, ...props }) => <h2 className="text-lg font-bold text-fin-accent mt-6 mb-3" {...props} />,
+                                                p: ({ node, ...props }) => <p className="text-fin-muted leading-relaxed mb-4" {...props} />,
+                                                strong: ({ node, ...props }) => <strong className="text-white font-bold" {...props} />,
+                                                ul: ({ node, ...props }) => <ul className="list-disc list-inside space-y-2 mb-4 text-fin-muted" {...props} />,
+                                            }}
+                                        >
+                                            {review || ""}
+                                        </ReactMarkdown>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="p-6 border-t border-fin-border bg-fin-card">
+                                <button
+                                    onClick={() => setShowReview(false)}
+                                    className="w-full py-3 bg-fin-bg hover:bg-fin-border/30 border border-fin-border rounded-xl text-sm font-bold text-white transition-all shadow-lg"
+                                >
+                                    Dismiss Analysis
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* Modals */}
             {showModal && (
