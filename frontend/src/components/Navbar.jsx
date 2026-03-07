@@ -56,85 +56,90 @@ const Navbar = () => {
                 }`}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16">
-                    {/* Logo */}
-                    <div className="flex-shrink-0 flex items-center">
-                        <Link to="/" className="flex items-center gap-2 group">
-                            <div className="p-1.5 rounded-lg bg-fin-accent/10 group-hover:bg-fin-accent/20 transition-colors">
-                                <Activity className="w-6 h-6 text-fin-accent" />
-                            </div>
-                            <div className="font-bold text-xl tracking-tight text-fin-text flex flex-col leading-none">
-                                <span>FinAgent<span className="text-fin-accent">-Pro</span></span>
-                            </div>
-                        </Link>
+                <div className="flex justify-between items-center h-16">
+                    {/* Left: Logo + Desktop Nav Group */}
+                    <div className="flex items-center gap-12">
+                        {/* Logo */}
+                        <div className="flex-shrink-0">
+                            <Link to="/" className="flex items-center gap-2.5 group">
+                                <div className="p-1.5 rounded-lg bg-fin-accent/10 group-hover:bg-fin-accent/20 transition-all duration-300">
+                                    <Activity className="w-6 h-6 text-fin-accent" />
+                                </div>
+                                <div className="font-bold text-xl tracking-tight text-fin-text flex flex-col leading-none">
+                                    <span className="whitespace-nowrap">FinAgent<span className="text-fin-accent">-Pro</span></span>
+                                </div>
+                            </Link>
+                        </div>
+
+                        {/* Desktop Nav */}
+                        <div className="hidden md:flex md:items-center md:gap-2">
+                            {navLinks.map((link) => {
+                                const Icon = link.icon;
+                                return (
+                                    <NavLink
+                                        key={link.name}
+                                        to={link.path}
+                                        className={({ isActive }) => `
+                        flex items-center gap-2.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-300 whitespace-nowrap
+                        ${isActive
+                                                ? 'text-fin-accent bg-fin-accent/10 shadow-sm'
+                                                : 'text-fin-muted hover:text-fin-text hover:bg-fin-card'}
+                      `}
+                                    >
+                                        <Icon className="w-[18px] h-[18px] shrink-0" />
+                                        {link.name}
+                                    </NavLink>
+                                );
+                            })}
+                        </div>
                     </div>
 
-                    {/* Desktop Nav */}
-                    <div className="hidden md:flex md:items-center md:space-x-8">
-                        {navLinks.map((link) => {
-                            const Icon = link.icon;
-                            return (
-                                <NavLink
-                                    key={link.name}
-                                    to={link.path}
-                                    className={({ isActive }) => `
-                    flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200
-                    ${isActive
-                                            ? 'text-fin-accent bg-fin-accent/10'
-                                            : 'text-fin-muted hover:text-fin-text hover:bg-fin-card'}
-                  `}
-                                >
-                                    <Icon className="w-4 h-4" />
-                                    {link.name}
-                                </NavLink>
-                            );
-                        })}
-                    </div>
-
-                    {/* Desktop Authenticated View & Theme Toggle */}
-                    <div className="hidden md:flex items-center space-x-6">
+                    {/* Right: Actions & Auth */}
+                    <div className="hidden md:flex items-center gap-4 lg:gap-6">
                         <button
                             onClick={toggleTheme}
-                            className="p-2 rounded-full text-fin-muted hover:text-fin-text hover:bg-fin-card transition-colors outline-none"
+                            className="p-2.5 rounded-xl text-fin-muted hover:text-fin-text hover:bg-fin-card transition-all duration-300 outline-none"
                             title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
                         >
-                            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                            {isDark ? <Sun className="w-[20px] h-[20px]" /> : <Moon className="w-[20px] h-[20px]" />}
                         </button>
 
+                        <div className="h-8 w-px bg-fin-border/30 mx-2" />
+
                         {user ? (
-                            <div className="flex items-center gap-4">
-                                <div className="text-sm font-medium text-fin-muted">
-                                    Operator <span className="text-fin-text font-bold">{user.name}</span>
+                            <div className="flex items-center gap-4 lg:gap-6">
+                                <div className="text-sm font-medium text-fin-muted flex flex-col items-end">
+                                    <span className="text-[9px] uppercase tracking-widest text-fin-accent/60 mb-0.5 whitespace-nowrap">Terminal Active</span>
+                                    <span className="text-fin-text font-bold whitespace-nowrap">{user.name}</span>
                                 </div>
 
                                 {/* Quick Search Hotkey Hint */}
-                                <div className="hidden lg:flex items-center text-xs text-fin-muted bg-fin-bg px-2 py-1 rounded-md border border-fin-border">
-                                    <Search className="w-3 h-3 mr-1" />
-                                    <span>Press</span>
-                                    <kbd className="mx-1 px-1.5 py-0.5 bg-fin-card rounded text-fin-text border border-fin-border/50 font-mono font-bold">/</kbd>
-                                    <span>to search</span>
+                                <div className="hidden xl:flex items-center text-xs text-fin-muted bg-fin-bg px-3 py-1.5 rounded-lg border border-fin-border shadow-inner whitespace-nowrap">
+                                    <Search className="w-3.5 h-3.5 mr-2 opacity-60" />
+                                    <span className="font-medium mr-2">Search</span>
+                                    <kbd className="px-1.5 py-0.5 bg-fin-card rounded border border-fin-border/50 font-mono font-black text-fin-accent"> / </kbd>
                                 </div>
                                 <button
                                     onClick={logout}
-                                    className="text-xs px-3 py-1.5 rounded-md border border-fin-border/50 text-fin-muted hover:text-fin-text hover:bg-fin-red/10 hover:border-fin-red/30 transition-all font-bold uppercase tracking-wider"
+                                    className="text-[10px] px-4 py-2 rounded-lg border border-fin-red/20 text-fin-red hover:bg-fin-red hover:text-white hover:border-fin-red shadow-sm transition-all duration-300 font-black uppercase tracking-widest whitespace-nowrap"
                                 >
                                     Log Out
                                 </button>
                             </div>
                         ) : (
-                            <div className="flex items-center gap-3">
-                                <Link to="/login" className="text-sm font-bold text-fin-muted hover:text-fin-text transition-colors">
+                            <div className="flex items-center gap-4">
+                                <Link to="/login" className="text-sm font-bold text-fin-muted hover:text-fin-text transition-all duration-300 whitespace-nowrap">
                                     Login
                                 </Link>
-                                <Link to="/register" className="text-xs font-bold bg-fin-accent/10 text-fin-accent border border-fin-accent/30 px-3 py-1.5 rounded-md hover:bg-fin-accent/20 transition-all uppercase tracking-wider">
+                                <Link to="/register" className="text-[11px] font-black bg-fin-accent text-white px-5 py-2.5 rounded-lg hover:shadow-lg hover:shadow-fin-accent/20 transition-all duration-300 uppercase tracking-widest whitespace-nowrap">
                                     Register
                                 </Link>
                             </div>
                         )}
                     </div>
 
-                    {/* Mobile menu and theme buttons */}
-                    <div className="flex items-center md:hidden space-x-2">
+                    {/* Mobile toggle */}
+                    <div className="flex items-center md:hidden gap-2">
                         <button
                             onClick={toggleTheme}
                             className="p-2 rounded-md text-fin-muted hover:text-fin-text transition-colors outline-none"
