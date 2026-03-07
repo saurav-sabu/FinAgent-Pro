@@ -239,6 +239,26 @@ export const marketAPI = {
             console.error(`Error fetching sector performance for ${region}`, error);
             throw error;
         }
+    },
+
+    getWatchlist: async () => {
+        try {
+            const response = await apiClient.get('/api/watchlist');
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching watchlist', error);
+            return []; // Return empty gracefully if not logged in
+        }
+    },
+
+    toggleWatchlist: async (ticker) => {
+        try {
+            const response = await apiClient.post('/api/watchlist', { ticker });
+            return response.data; // { status: "added" | "removed", ticker }
+        } catch (error) {
+            console.error(`Error toggling watchlist for ${ticker}`, error);
+            throw error;
+        }
     }
 };
 

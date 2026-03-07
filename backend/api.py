@@ -16,6 +16,7 @@ from backend.agent.controller import FinanceAgent
 from backend.agent.router import router, set_agent
 from backend.agent.auth_router import router as auth_router
 from backend.agent.analytics_router import router as analytics_router
+from backend.agent.watchlist_router import router as watchlist_router
 from backend.database import engine
 from backend import models
 from backend.utils.logger import logger
@@ -83,5 +84,6 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(router)
 app.include_router(analytics_router)
+app.include_router(watchlist_router)
 
 

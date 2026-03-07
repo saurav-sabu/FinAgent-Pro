@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Zap, CalendarDays, Search, Download, Image as ImageIcon, FileSpreadsheet } from 'lucide-react';
+import { Loader2, Zap, CalendarDays, Search, Download, Image as ImageIcon, FileSpreadsheet, Star } from 'lucide-react';
 import IndexCard from '../components/IndexCard';
 import StockCard from '../components/StockCard';
 import MainChart from '../components/MainChart';
@@ -20,6 +20,9 @@ const Dashboard = () => {
     const [timeFrame, setTimeFrame] = useState("6M");
     const [showExportMenu, setShowExportMenu] = useState(false);
 
+    const [watchlist, setWatchlist] = useState([]);
+    const [isWatchlistUpdating, setIsWatchlistUpdating] = useState(false);
+
     const chartRef = useRef(null);
 
     useEffect(() => {
@@ -35,12 +38,42 @@ const Dashboard = () => {
             }
         };
 
+        const fetchWatchlist = async () => {
+            try {
+                const list = await marketAPI.getWatchlist();
+                setWatchlist(list || []);
+            } catch (e) {
+                console.error("Watchlist fetch error", e);
+            }
+        };
+
         setLoading(true);
         fetchData();
+        fetchWatchlist();
+
         // Simulate real-time updates every 15s
-        const interval = setInterval(fetchData, 15000);
+        const interval = setInterval(() => {
+            fetchData();
+            fetchWatchlist();
+        }, 15000);
         return () => clearInterval(interval);
     }, [ticker, timeFrame]);
+
+    const handleToggleWatchlist = async () => {
+        if (!data?.stockDetails?.ticker || isWatchlistUpdating) return;
+        setIsWatchlistUpdating(true);
+        try {
+            await marketAPI.toggleWatchlist(data.stockDetails.ticker);
+            const newList = await marketAPI.getWatchlist();
+            setWatchlist(newList || []);
+        } catch (e) {
+            console.error("Failed to toggle watchlist", e);
+        } finally {
+            setIsWatchlistUpdating(false);
+        }
+    };
+
+    const isWatching = (sym) => watchlist.some(w => w.ticker === sym);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -125,6 +158,14 @@ const Dashboard = () => {
                                 <h2 className="text-base lg:text-xl font-bold flex items-center gap-2">
                                     {data.stockDetails?.ticker}
                                     <span className="text-fin-muted font-normal text-sm">{data.stockDetails?.name}</span>
+                                    <button
+                                        onClick={handleToggleWatchlist}
+                                        disabled={isWatchlistUpdating}
+                                        className="ml-2 p-1.5 rounded-lg border border-fin-border/50 hover:bg-fin-card transition-all group active:scale-95"
+                                        title={isWatching(data.stockDetails?.ticker) ? "Remove from Watchlist" : "Add to Watchlist"}
+                                    >
+                                        <Star className={`w-4 h-4 transition-all ${isWatching(data.stockDetails?.ticker) ? 'fill-fin-accent text-fin-accent' : 'text-fin-muted group-hover:text-fin-accent'}`} />
+                                    </button>
                                 </h2>
                                 {data.stockDetails?.earnings_date && (
                                     <div className="mt-2 flex items-center gap-1.5 text-xs text-fin-muted bg-fin-bg/50 px-2 py-1 rounded inline-flex border border-fin-border/50">
@@ -226,6 +267,47 @@ const Dashboard = () => {
                             level={data.riskAnalysis?.level || 'Low'}
                             reasons={data.riskAnalysis?.reasons || []}
                         />
+                    </motion.div>
+
+                    {/* My Watchlist */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.5, delay: 0.25 }}
+                        className="glass-panel p-4 lg:p-5 border-fin-accent/20"
+                    >
+                        <h2 className="text-base lg:text-lg font-bold mb-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Star className="w-4 h-4 text-fin-accent fill-fin-accent" />
+                                My Watchlist
+                            </div>
+                        </h2>
+
+                        {watchlist.length > 0 ? (
+                            <div className="space-y-2 lg:space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                                {watchlist.map((stock, i) => (
+                                    <div
+                                        key={stock.ticker}
+                                        onClick={() => setTicker(stock.ticker)}
+                                        className="group"
+                                    >
+                                        <StockCard
+                                            symbol={stock.ticker}
+                                            name="Watchlist"
+                                            price={`$${stock.price}`}
+                                            change={stock.change_percent}
+                                            volume="-"
+                                            delay={i}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-sm text-fin-muted text-center py-6 px-4 italic border border-dashed border-fin-border/50 rounded-lg bg-fin-bg/30">
+                                <Star className="w-8 h-8 mx-auto text-fin-border mb-2" />
+                                You haven't added any stocks yet. Click the <Star className="inline w-3 h-3 mx-1" /> icon next to a ticker to watch it!
+                            </div>
+                        )}
                     </motion.div>
 
                     {/* Sector Heatmap */}
