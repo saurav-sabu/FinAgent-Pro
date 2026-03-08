@@ -10,6 +10,7 @@ const Assistant = () => {
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isHistoryLoading, setIsHistoryLoading] = useState(true);
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -19,6 +20,22 @@ const Assistant = () => {
     useEffect(() => {
         scrollToBottom();
     }, [messages, isLoading]);
+
+    useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                const history = await marketAPI.getChatHistory();
+                if (history && history.length > 0) {
+                    setMessages(history.map(m => ({ role: m.role, content: m.content })));
+                }
+            } catch (error) {
+                console.error("Failed to load chat history", error);
+            } finally {
+                setIsHistoryLoading(false);
+            }
+        };
+        fetchHistory();
+    }, []);
 
     // Global Hotkey Binding
     useKeyPress('Enter', (e) => {

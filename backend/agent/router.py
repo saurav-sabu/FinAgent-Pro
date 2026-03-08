@@ -5,7 +5,7 @@ This module defines HTTP endpoints that expose the finance agent's capabilities,
 including health checks and query analysis.
 """
 
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import StreamingResponse
@@ -16,13 +16,19 @@ from backend.agent.schemas import (
     QueryRequest,
     QueryResponse,
     DashboardResponse,
-    InsightResponse
+    InsightResponse,
+    ChatMessageResponse
 )
 from backend.services.news_service import news_service
 from backend.services.dashboard_service import dashboard_service
 from backend.utils.limiter import rate_limit
 from backend.utils.logger import logger
 from backend.utils.cache import ttl_cache
+from backend.utils.auth import get_current_user
+from backend.database import get_db
+from backend.models import User, ChatMessage
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 # Router for /health, /analyze, and /news endpoints
 router = APIRouter()
@@ -64,13 +70,14 @@ async def health_check() -> HealthResponse:
     summary="Analyze a financial query with streaming response",
     response_description="Server-Sent Events streaming the AI-generated analysis",
 )
-async def analyze(request: Request, body: QueryRequest) -> StreamingResponse:
+async def analyze(
+    request: Request, 
+    body: QueryRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+) -> StreamingResponse:
     """
-    Stream a financial query analysis using the injected FinanceAgent.
-
-    **Request body (JSON):** `{"query": "Analyze AAPL"}` — must be JSON with a `query` field.
-
-    **Returns:** A text/event-stream of the analysis text chunks.
+    Stream a financial query analysis and persist chat history.
     """
     if agent is None:
         logger.error("Analysis requested but agent is not initialized.")
@@ -79,12 +86,47 @@ async def analyze(request: Request, body: QueryRequest) -> StreamingResponse:
             detail="Agent not initialized. Server may still be starting up.",
         )
 
-    logger.info(f"Received streaming analysis request for query: {body.query[:50]}...")
+    logger.info(f"Received streaming analysis request for user {current_user.email}")
     
+    # We'll use a wrapper to capture the full response for persistence
+    async def stream_and_save():
+        full_response = ""
+        import json
+        async for chunk in agent.stream_analyze(body.query):
+            full_response += chunk
+            # Use JSON encoding to safely transmit all characters (including newlines)
+            yield f"data: {json.dumps(chunk)}\n\n"
+        
+        # Save both messages to DB after stream completes
+        try:
+            user_msg = ChatMessage(user_id=current_user.id, role='user', content=body.query)
+            agent_msg = ChatMessage(user_id=current_user.id, role='assistant', content=full_response)
+            db.add(user_msg)
+            db.add(agent_msg)
+            await db.commit()
+        except Exception as e:
+            logger.error(f"Failed to persist chat message: {e}")
+
     return StreamingResponse(
-        agent.stream_analyze(body.query),
+        stream_and_save(),
         media_type="text/event-stream"
     )
+
+@router.get("/chat/history", response_model=List[ChatMessageResponse], tags=["Analysis"])
+async def get_chat_history(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Retrieve the message history for the current user.
+    """
+    result = await db.execute(
+        select(ChatMessage)
+        .where(ChatMessage.user_id == current_user.id)
+        .order_by(ChatMessage.created_at.asc())
+        .limit(100)
+    )
+    return result.scalars().all()
 
 
 
@@ -122,8 +164,8 @@ async def get_latest_market_news(
 
 @router.get("/dashboard",response_model=DashboardResponse,tags=["Market Data"], dependencies=[Depends(rate_limit(20, 10))])
 @ttl_cache(ttl_seconds=120)
-async def get_dashboard(request:Request,ticker:str="AAPL"):
-    data = await dashboard_service.get_dashboard_data(ticker)
+async def get_dashboard(request:Request,ticker:str="AAPL", timeframe: str = "6M"):
+    data = await dashboard_service.get_dashboard_data(ticker, timeframe)
     return data
 
 @router.get("/dashboard/insight", response_model=InsightResponse, tags=["Market Data"], dependencies=[Depends(rate_limit(10, 10))])

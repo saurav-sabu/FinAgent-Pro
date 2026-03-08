@@ -34,6 +34,9 @@ const Portfolio = () => {
     const [review, setReview] = useState(null);
     const [reviewLoading, setReviewLoading] = useState(false);
     const [showReview, setShowReview] = useState(false);
+    const [activeTab, setActiveTab] = useState('holdings'); // 'holdings' or 'history'
+    const [transactions, setTransactions] = useState([]);
+    const [transactionsLoading, setTransactionsLoading] = useState(false);
     const { showToast } = useToast();
 
     const fetchPortfolio = async () => {
@@ -51,6 +54,24 @@ const Portfolio = () => {
     useEffect(() => {
         fetchPortfolio();
     }, []);
+
+    const fetchHistory = async () => {
+        setTransactionsLoading(true);
+        try {
+            const history = await marketAPI.getTransactionHistory();
+            setTransactions(history);
+        } catch (error) {
+            console.error("Failed to fetch history:", error);
+        } finally {
+            setTransactionsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'history') {
+            fetchHistory();
+        }
+    }, [activeTab]);
 
     const handleReview = async () => {
         setReviewLoading(true);
@@ -195,59 +216,134 @@ const Portfolio = () => {
                 </motion.div>
             </div>
 
+            {/* Tabs */}
+            <div className="flex border-b border-fin-border/50">
+                <button
+                    onClick={() => setActiveTab('holdings')}
+                    className={`px-8 py-4 text-sm font-bold transition-all relative ${activeTab === 'holdings' ? 'text-fin-accent' : 'text-fin-muted hover:text-white'}`}
+                >
+                    Holdings
+                    {activeTab === 'holdings' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-fin-accent" />}
+                </button>
+                <button
+                    onClick={() => setActiveTab('history')}
+                    className={`px-8 py-4 text-sm font-bold transition-all relative ${activeTab === 'history' ? 'text-fin-accent' : 'text-fin-muted hover:text-white'}`}
+                >
+                    History
+                    {activeTab === 'history' && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-fin-accent" />}
+                </button>
+            </div>
+
             {/* Holdings Table */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="glass-panel overflow-hidden"
-            >
-                <div className="p-6 border-b border-fin-border/50">
-                    <h2 className="font-bold flex items-center gap-2">
-                        Your Holdings
-                        <span className="text-xs bg-fin-accent/10 text-fin-accent px-2 py-0.5 rounded border border-fin-accent/20">
-                            {data.holdings.length} Assets
-                        </span>
-                    </h2>
-                </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                        <thead className="text-[10px] uppercase tracking-wider text-fin-muted font-bold bg-fin-bg/30">
-                            <tr>
-                                <th className="px-6 py-4">Ticker</th>
-                                <th className="px-6 py-4">Shares</th>
-                                <th className="px-6 py-4">Avg Cost</th>
-                                <th className="px-6 py-4">Price</th>
-                                <th className="px-6 py-4">Market Value</th>
-                                <th className="px-6 py-4 text-right">P&L</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-fin-border/30">
-                            {data.holdings.map((h) => {
-                                const holdPositive = h.gain >= 0;
-                                return (
-                                    <tr key={h.ticker} className="hover:bg-fin-card transition-colors">
-                                        <td className="px-6 py-5 font-bold text-white uppercase">{h.ticker}</td>
-                                        <td className="px-6 py-5 text-sm">{h.shares}</td>
-                                        <td className="px-6 py-5 text-sm text-fin-muted">${(h.average_cost || 0).toLocaleString()}</td>
-                                        <td className="px-6 py-5 text-sm font-medium">${(h.current_price || 0).toLocaleString()}</td>
-                                        <td className="px-6 py-5 text-sm font-bold">${(h.market_value || 0).toLocaleString()}</td>
-                                        <td className="px-6 py-5 text-right">
-                                            <div className={`text-sm font-bold flex items-center justify-end gap-1 ${holdPositive ? 'text-fin-green' : 'text-fin-red'}`}>
-                                                {holdPositive ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                                                ${Math.abs(h.gain || 0).toLocaleString()}
-                                            </div>
-                                            <div className={`text-[10px] font-bold ${holdPositive ? 'text-fin-green/70' : 'text-fin-red/70'}`}>
-                                                {holdPositive ? '+' : '-'}{Math.abs(h.gain_percent || 0).toFixed(2)}%
-                                            </div>
-                                        </td>
+            {activeTab === 'holdings' && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="glass-panel overflow-hidden"
+                >
+                    <div className="p-6 border-b border-fin-border/50">
+                        <h2 className="font-bold flex items-center gap-2">
+                            Your Holdings
+                            <span className="text-xs bg-fin-accent/10 text-fin-accent px-2 py-0.5 rounded border border-fin-accent/20">
+                                {data.holdings.length} Assets
+                            </span>
+                        </h2>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                            <thead className="text-[10px] uppercase tracking-wider text-fin-muted font-bold bg-fin-bg/30">
+                                <tr>
+                                    <th className="px-6 py-4">Ticker</th>
+                                    <th className="px-6 py-4">Shares</th>
+                                    <th className="px-6 py-4">Avg Cost</th>
+                                    <th className="px-6 py-4">Price</th>
+                                    <th className="px-6 py-4">Market Value</th>
+                                    <th className="px-6 py-4 text-right">P&L</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-fin-border/30">
+                                {data.holdings.map((h) => {
+                                    const holdPositive = h.gain >= 0;
+                                    return (
+                                        <tr key={h.ticker} className="hover:bg-fin-card transition-colors">
+                                            <td className="px-6 py-5 font-bold text-white uppercase">{h.ticker}</td>
+                                            <td className="px-6 py-5 text-sm">{h.shares}</td>
+                                            <td className="px-6 py-5 text-sm text-fin-muted">${(h.average_cost || 0).toLocaleString()}</td>
+                                            <td className="px-6 py-5 text-sm font-medium">${(h.current_price || 0).toLocaleString()}</td>
+                                            <td className="px-6 py-5 text-sm font-bold">${(h.market_value || 0).toLocaleString()}</td>
+                                            <td className="px-6 py-5 text-right">
+                                                <div className={`text-sm font-bold flex items-center justify-end gap-1 ${holdPositive ? 'text-fin-green' : 'text-fin-red'}`}>
+                                                    {holdPositive ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                                                    ${Math.abs(h.gain || 0).toLocaleString()}
+                                                </div>
+                                                <div className={`text-[10px] font-bold ${holdPositive ? 'text-fin-green/70' : 'text-fin-red/70'}`}>
+                                                    {holdPositive ? '+' : '-'}{Math.abs(h.gain_percent || 0).toFixed(2)}%
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* History Table */}
+            {activeTab === 'history' && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="glass-panel overflow-hidden"
+                >
+                    {transactionsLoading ? (
+                        <div className="py-20 flex flex-col items-center justify-center">
+                            <Loader2 className="w-8 h-8 text-fin-accent animate-spin mb-4" />
+                            <p className="text-fin-muted text-sm">Loading history...</p>
+                        </div>
+                    ) : transactions.length > 0 ? (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="text-[10px] uppercase tracking-wider text-fin-muted font-bold bg-fin-bg/30">
+                                    <tr>
+                                        <th className="px-6 py-4">Date</th>
+                                        <th className="px-6 py-4">Ticker</th>
+                                        <th className="px-6 py-4">Type</th>
+                                        <th className="px-6 py-4">Shares</th>
+                                        <th className="px-6 py-4">Price</th>
+                                        <th className="px-6 py-4 text-right">Total</th>
                                     </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </motion.div>
+                                </thead>
+                                <tbody className="divide-y divide-fin-border/30">
+                                    {transactions.map((t) => (
+                                        <tr key={t.id} className="hover:bg-fin-card transition-colors">
+                                            <td className="px-6 py-5 text-xs text-fin-muted">
+                                                {new Date(t.timestamp).toLocaleDateString()} {new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </td>
+                                            <td className="px-6 py-5 font-bold text-white uppercase">{t.ticker}</td>
+                                            <td className="px-6 py-5">
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${t.type === 'BUY' ? 'bg-fin-green/10 text-fin-green border border-fin-green/20' : 'bg-fin-red/10 text-fin-red border border-fin-red/20'}`}>
+                                                    {t.type}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-5 text-sm">{t.shares}</td>
+                                            <td className="px-6 py-5 text-sm">${t.price.toLocaleString()}</td>
+                                            <td className="px-6 py-5 text-right font-bold text-white">
+                                                ${(t.shares * t.price).toLocaleString()}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="py-20 text-center">
+                            <p className="text-fin-muted italic text-sm">No transaction history found.</p>
+                        </div>
+                    )}
+                </motion.div>
+            )}
 
             {/* AI Review Sidebar */}
             <AnimatePresence>

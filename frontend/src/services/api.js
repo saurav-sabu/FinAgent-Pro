@@ -106,6 +106,11 @@ export const marketAPI = {
         return response.data;
     },
 
+    async getTransactionHistory() {
+        const response = await apiClient.get('portfolio/history');
+        return response.data;
+    },
+
     async getWatchlist() {
         try {
             const response = await apiClient.get('watchlist');
@@ -121,11 +126,11 @@ export const marketAPI = {
         return response.data;
     },
 
-    getDashboard: async (ticker = "AAPL") => {
+    getDashboard: async (ticker = "AAPL", timeframe = "6M") => {
         try {
             if (USE_MOCK_DATA) return getMockDashboardData();
 
-            const response = await apiClient.get(`dashboard?ticker=${ticker}`);
+            const response = await apiClient.get(`dashboard?ticker=${ticker}&timeframe=${timeframe}`);
             const data = response.data;
 
             const formatVolume = (vol) => {
@@ -203,6 +208,8 @@ export const marketAPI = {
         }
     },
 
+    getChatHistory: () => apiClient.get('chat/history').then(res => res.data),
+
     askAssistant: async (message, onChunk) => {
         try {
             if (USE_MOCK_DATA) {
@@ -215,10 +222,12 @@ export const marketAPI = {
                 return;
             }
 
+            const token = apiClient.defaults.headers.common['Authorization'];
             const response = await fetch(`${API_URL}/analyze`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': token
                 },
                 body: JSON.stringify({ query: message })
             });
@@ -229,14 +238,34 @@ export const marketAPI = {
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder('utf-8');
+            let buffer = '';
 
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-                const chunkText = decoder.decode(value, { stream: true });
-                if (onChunk) {
-                    onChunk(chunkText);
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+
+                // Keep the last partial line in the buffer
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (line.trim().startsWith('data: ')) {
+                        try {
+                            const jsonContent = line.trim().slice(6);
+                            const content = JSON.parse(jsonContent);
+                            if (onChunk) onChunk(content);
+                        } catch (e) {
+                            console.error('Error parsing SSE chunk:', e, line);
+                        }
+                    }
                 }
+            }
+
+            // Handle any remaining content in the buffer
+            if (buffer.startsWith('data: ')) {
+                onChunk(buffer.slice(6));
             }
         } catch (error) {
             console.error('Error with AI assistant', error);

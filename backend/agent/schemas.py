@@ -8,7 +8,7 @@ Defines data structures for:
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional, Dict,Any
+from typing import List, Optional, Dict, Any
 
 from pydantic import BaseModel, Field
 
@@ -115,28 +115,28 @@ class MarketIndex(BaseModel):
     currency: str = "USD"
 
 class TrendingStock(BaseModel):
-    ticker:str
+    ticker: str
     name: str
-    price:float
-    change_percent:float
+    price: float
+    change_percent: float
     volume: int
     currency: str = "USD"
 
 class StockDetails(BaseModel):
-    ticker:str
+    ticker: str
     name: Optional[str] = None
     sector: Optional[str] = None
-    price:float
-    change:float
-    change_percent:float
-    open:float
-    previous_close:float
-    day_high:float
-    day_low:float
-    five_two_week_high:float
-    five_two_week_low:float
-    volume:int
-    market_cap:Optional[float] = None
+    price: float
+    change: float
+    change_percent: float
+    open: float
+    previous_close: float
+    day_high: float
+    day_low: float
+    five_two_week_high: float
+    five_two_week_low: float
+    volume: int
+    market_cap: Optional[float] = None
     currency: str = "USD"
     
     # Charting Arrays
@@ -157,7 +157,7 @@ class StockDetails(BaseModel):
 
 class RiskAnalysis(BaseModel):
     score: int
-    level:str
+    level: str
     reasons: List[str]
     rsi: float
     volatility: float
@@ -165,7 +165,7 @@ class RiskAnalysis(BaseModel):
 
 class DashboardResponse(BaseModel):
     indices: Dict[str, MarketIndex]
-    trending: Dict[str,List[TrendingStock]]
+    trending: Dict[str, List[TrendingStock]]
     sector_performance: Dict[str, float]
     stock_lookup: StockDetails
     risk_score: RiskAnalysis
@@ -176,3 +176,23 @@ class InsightResponse(BaseModel):
     sentiment: str
     summary_bullets: List[str]
     recommendation: str
+
+class ChatMessageResponse(BaseModel):
+    id: int
+    role: str
+    content: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class TransactionResponse(BaseModel):
+    id: int
+    ticker: str
+    type: str # 'BUY' or 'SELL'
+    shares: float
+    price: float
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True

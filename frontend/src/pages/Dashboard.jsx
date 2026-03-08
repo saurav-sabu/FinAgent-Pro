@@ -12,7 +12,7 @@ import AiInsight from '../components/AiInsight';
 import RiskGauge from '../components/RiskGauge';
 import SectorHeatmap from '../components/SectorHeatmap';
 import { marketAPI } from '../services/api';
-import { exportChartAsPNG } from '../utils/export';
+import { exportChartAsPNG, exportChartAsCSV } from '../utils/export';
 
 const Dashboard = () => {
     const [data, setData] = useState(null);
@@ -220,6 +220,16 @@ const Dashboard = () => {
                                                 >
                                                     <ImageIcon className="w-4 h-4 text-fin-accent" />
                                                     Export as PNG
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        exportChartAsCSV(data.stockDetails, `${ticker}-data.csv`);
+                                                        setShowExportMenu(false);
+                                                    }}
+                                                    className="flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-fin-card-hover transition-colors border-t border-fin-border/30"
+                                                >
+                                                    <Download className="w-4 h-4 text-fin-accent" />
+                                                    Export as CSV
                                                 </button>
                                             </motion.div>
                                         )}

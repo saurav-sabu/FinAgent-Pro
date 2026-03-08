@@ -56,9 +56,9 @@ class DashboardService:
         rs = gain / loss
         return 100 - (100 / (1 + rs))
 
-    async def get_dashboard_data(self, ticker: str) -> Dict[str, Any]:
+    async def get_dashboard_data(self, ticker: str, timeframe: str = "6M") -> Dict[str, Any]:
         """
-        Build the full dashboard payload for a given ticker.
+        Build the full dashboard payload for a given ticker and timeframe.
 
         Returns a dict matching DashboardResponse:
         - indices: {index_name: change_percent}
@@ -85,7 +85,7 @@ class DashboardService:
         # Losers: bottom 3 negative (sorted most negative first)
         losers = sorted([x for x in trending_data if x["change_percent"] < 0], key=lambda x: x["change_percent"])[:3]
 
-        stock_data = self._get_stock_details(ticker)
+        stock_data = self._get_stock_details(ticker, timeframe)
 
         return {
             "indices": indices_data,
@@ -172,16 +172,35 @@ class DashboardService:
                 logger.warning(f"Failed to fetch sector {name}: {e}")
         return data
 
-    def _get_stock_details(self, ticker: str) -> Dict[str, Any]:
+    def _get_stock_details(self, ticker: str, timeframe: str = "6M") -> Dict[str, Any]:
         stock = yf.Ticker(ticker)
-        # Fetch 1 year of data to ensure we have enough points for a 200-day moving average
-        hist = stock.history(period="1y")
+        
+        # Map UI timeframe to yfinance period and interval
+        tf_map = {
+            "1D": ("1d", "5m"),
+            "1W": ("5d", "30m"),
+            "1M": ("1mo", "1h"),
+            "3M": ("3mo", "1d"),
+            "6M": ("6mo", "1d"),
+            "1Y": ("1y", "1d"),
+            "YTD": ("ytd", "1d"),
+            "5Y": ("5y", "1d")
+        }
+        
+        period, interval = tf_map.get(timeframe, ("6mo", "1d"))
+        
+        # Fetch data based on timeframe
+        # We fetch extra for MAs if needed, but for simpler UI we'll stick to the requested range
+        # unless it's a daily/weekly view where MAs might not be as common
+        hist = stock.history(period=period, interval=interval)
 
         if hist.empty:
-            raise ValueError(f"{ticker} not found")
+            # Fallback if specific interval fails
+            hist = stock.history(period=period)
+            if hist.empty:
+                raise ValueError(f"{ticker} not found")
 
-        # Focus our charting response on the last 6 months for optimal display
-        display_hist = hist.tail(126) # Roughly 6 months of trading days
+        display_hist = hist
 
         latest = hist.iloc[-1]
         prev = hist.iloc[-2]
@@ -190,21 +209,24 @@ class DashboardService:
         price_change_pct = (price_change / prev["Close"]) * 100
 
         
-        # Calculate Moving Averages (on the full 1y history)
-        ma50 = hist["Close"].rolling(window=50).mean()
-        ma200 = hist["Close"].rolling(window=200).mean()
-        
-        # Calculate full RSI series
+        # Indicators
+        # Note: Indicators like MA50/MA200 need more history than just the display range.
+        # For simplicity in this implementation, we calculate them on whatever data we have.
+        # If the timeframe is small (e.g., 1D), these will be mostly NaN.
+        ma50 = hist["Close"].rolling(window=min(50, len(hist))).mean()
+        ma200 = hist["Close"].rolling(window=min(200, len(hist))).mean()
         rsi_series_full = self._calculate_rsi(hist["Close"])
         
-        # Trim indicators to match the 6-month display history
-        # pandas .fillna(np.nan) ensures we have valid floats/NaNs, and we convert NaN -> None for JSON
-        disp_ma50 = ma50.tail(126).replace([np.inf, -np.inf, np.nan], None).tolist()
-        disp_ma200 = ma200.tail(126).replace([np.inf, -np.inf, np.nan], None).tolist()
-        disp_rsi = rsi_series_full.tail(126).replace([np.inf, -np.inf, np.nan], None).tolist()
+        disp_ma50 = ma50.replace([np.inf, -np.inf, np.nan], None).tolist()
+        disp_ma200 = ma200.replace([np.inf, -np.inf, np.nan], None).tolist()
+        disp_rsi = rsi_series_full.replace([np.inf, -np.inf, np.nan], None).tolist()
         
         # Format dates as strings
-        chart_dates = display_hist.index.strftime('%Y-%m-%d').tolist()
+        # For intraday, use HH:mm, for daily use YYYY-MM-DD
+        if interval in ["5m", "15m", "30m", "1h"]:
+             chart_dates = display_hist.index.strftime('%H:%M').tolist()
+        else:
+             chart_dates = display_hist.index.strftime('%Y-%m-%d').tolist()
 
         # Handle earnings date mapping safely
         earnings = None

@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from typing import List, Dict, Any
 from pydantic import BaseModel
+from backend.agent.schemas import TransactionResponse
 import yfinance as yf
 import pandas as pd
 
@@ -231,3 +232,18 @@ async def get_portfolio_review(
             status_code=500, 
             detail=f"The AI Wealth Manager is currently busy: {str(e)}"
         )
+
+@router.get("/history", response_model=List[TransactionResponse])
+async def get_transaction_history(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get the user's full transaction history.
+    """
+    result = await db.execute(
+        select(Transaction)
+        .where(Transaction.user_id == current_user.id)
+        .order_by(Transaction.timestamp.desc())
+    )
+    return result.scalars().all()
