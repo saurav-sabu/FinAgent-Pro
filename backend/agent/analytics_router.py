@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from typing import Dict, Any, List
+from backend.agent.schemas import TICKER_REGEX
 
 from backend.services.analytics_service import analytics_service
 from backend.utils.auth import get_current_user
@@ -13,7 +14,7 @@ router = APIRouter(
 
 @router.get("/fundamentals/{ticker}", response_model=Dict[str, Any])
 async def get_fundamentals(
-    ticker: str,
+    ticker: str = Path(..., pattern=TICKER_REGEX),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -29,7 +30,7 @@ async def get_fundamentals(
 
 @router.get("/technicals/{ticker}", response_model=Dict[str, Any])
 async def get_technicals(
-    ticker: str,
+    ticker: str = Path(..., pattern=TICKER_REGEX),
     period: str = Query("1y", description="Time period for technicals (e.g., 1mo, 3mo, 6mo, 1y)"),
     current_user: User = Depends(get_current_user)
 ):

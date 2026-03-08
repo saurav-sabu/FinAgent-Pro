@@ -5,6 +5,7 @@ This module uses Pydantic Settings to load configuration from environment variab
 and .env file. All settings are validated and type-checked at startup.
 """
 
+from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -56,6 +57,15 @@ class Settings(BaseSettings):
 
     # Finnhub API Key for live Macroeconomic Calendar
     FINNHUB_API_KEY: str = ""
+
+    # Allowed CORS origins (comma-separated string in .env, list of strings in Python)
+    # Defaulting to common development ports
+    ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174"
+    ]
 
 
 

@@ -72,10 +72,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Allow browser/frontend requests from other origins (e.g. React dev server)
+# Allow browser/frontend requests from authorized origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

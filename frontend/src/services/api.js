@@ -44,7 +44,14 @@ apiClient.interceptors.response.use(null, async (error) => {
         } else if (response.status === 429) {
             message = 'Too many requests. Please slow down.';
         } else if (response.data?.detail) {
-            message = response.data.detail;
+            const detail = response.data.detail;
+            if (typeof detail === 'string') {
+                message = detail;
+            } else if (Array.isArray(detail)) {
+                message = detail.map(err => err.msg || JSON.stringify(err)).join(", ");
+            } else {
+                message = JSON.stringify(detail);
+            }
         }
 
         showToastFn(message, 'error');

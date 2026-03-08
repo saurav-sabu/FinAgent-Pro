@@ -37,9 +37,22 @@ export const AuthProvider = ({ children }) => {
             setUser(data.user);
             return { success: true };
         } catch (error) {
+            let errorMessage = "Failed to login. Please check credentials.";
+            const detail = error.response?.data?.detail;
+
+            if (detail) {
+                if (typeof detail === 'string') {
+                    errorMessage = detail;
+                } else if (Array.isArray(detail)) {
+                    errorMessage = detail.map(err => err.msg || JSON.stringify(err)).join(", ");
+                } else if (typeof detail === 'object') {
+                    errorMessage = JSON.stringify(detail);
+                }
+            }
+
             return {
                 success: false,
-                error: error.response?.data?.detail || "Failed to login. Please check credentials."
+                error: errorMessage
             };
         }
     };
@@ -50,9 +63,22 @@ export const AuthProvider = ({ children }) => {
             // Auto login after successful registration
             return await login(email, password);
         } catch (error) {
+            let errorMessage = "Registration failed. Email might be in use.";
+            const detail = error.response?.data?.detail;
+
+            if (detail) {
+                if (typeof detail === 'string') {
+                    errorMessage = detail;
+                } else if (Array.isArray(detail)) {
+                    errorMessage = detail.map(err => err.msg || JSON.stringify(err)).join(", ");
+                } else if (typeof detail === 'object') {
+                    errorMessage = JSON.stringify(detail);
+                }
+            }
+
             return {
                 success: false,
-                error: error.response?.data?.detail || "Registration failed. Email might be in use."
+                error: errorMessage
             };
         }
     };

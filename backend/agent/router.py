@@ -5,9 +5,9 @@ This module defines HTTP endpoints that expose the finance agent's capabilities,
 including health checks and query analysis.
 """
 
-from typing import Optional, List
+from typing import Optional, List, Annotated
 
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, HTTPException, Request, Depends, Query, Path
 from fastapi.responses import StreamingResponse
 from backend.agent.schemas import (
     HealthResponse,
@@ -17,7 +17,8 @@ from backend.agent.schemas import (
     QueryResponse,
     DashboardResponse,
     InsightResponse,
-    ChatMessageResponse
+    ChatMessageResponse,
+    TICKER_REGEX
 )
 from backend.services.news_service import news_service
 from backend.services.dashboard_service import dashboard_service
@@ -141,7 +142,7 @@ async def get_chat_history(
 async def get_latest_market_news(
     request: Request,
     region: NewsRegion = NewsRegion.GLOBAL,
-    ticker: Optional[str] = None,
+    ticker: Annotated[Optional[str], Query(pattern=TICKER_REGEX)] = None,
     limit: int = 10,
 ) -> NewsResponse:
     """
@@ -164,13 +165,13 @@ async def get_latest_market_news(
 
 @router.get("/dashboard",response_model=DashboardResponse,tags=["Market Data"], dependencies=[Depends(rate_limit(20, 10))])
 @ttl_cache(ttl_seconds=120)
-async def get_dashboard(request:Request,ticker:str="AAPL", timeframe: str = "6M"):
+async def get_dashboard(request:Request, ticker: Annotated[str, Query(pattern=TICKER_REGEX)] = "AAPL", timeframe: str = "6M"):
     data = await dashboard_service.get_dashboard_data(ticker, timeframe)
     return data
 
 @router.get("/dashboard/insight", response_model=InsightResponse, tags=["Market Data"], dependencies=[Depends(rate_limit(10, 10))])
 @ttl_cache(ttl_seconds=300)
-async def get_dashboard_insight(request: Request, ticker: str = "AAPL"):
+async def get_dashboard_insight(request: Request, ticker: Annotated[str, Query(pattern=TICKER_REGEX)] = "AAPL"):
     """
     Generate an AI-powered stock sentiment overview.
     """

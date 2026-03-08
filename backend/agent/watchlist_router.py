@@ -14,8 +14,11 @@ from backend.utils.cache import ttl_cache
 
 router = APIRouter(prefix="/api/watchlist", tags=["Watchlist"])
 
+from pydantic import BaseModel, Field
+from backend.agent.schemas import TICKER_REGEX
+
 class WatchlistRequest(BaseModel):
-    ticker: str
+    ticker: str = Field(..., pattern=TICKER_REGEX)
 
 class WatchlistResponse(BaseModel):
     id: int

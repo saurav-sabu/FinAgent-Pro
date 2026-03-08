@@ -10,7 +10,18 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional, Dict, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+import re
+
+# Reusable Ticker Field with regex validation
+TICKER_REGEX = r'^[A-Z.]{1,15}$'
+TickerField = Field(
+    ..., 
+    min_length=1, 
+    max_length=15, 
+    pattern=TICKER_REGEX,
+    description="Stock ticker symbol (e.g. AAPL, RELIANCE.NS)"
+)
 
 
 class QueryRequest(BaseModel):
@@ -104,7 +115,13 @@ class NewsFilterRequest(BaseModel):
     region: NewsRegion = Field(
         default=NewsRegion.GLOBAL, description="Filter news by region"
     )
-    ticker: Optional[str] = Field(None, description="Stock ticker symbol (e.g. AAPL)")
+    ticker: Optional[str] = Field(
+        None, 
+        min_length=1, 
+        max_length=15, 
+        pattern=TICKER_REGEX, 
+        description="Stock ticker symbol (e.g. AAPL)"
+    )
     limit: int = Field(default=10, ge=1, le=50)
 
 

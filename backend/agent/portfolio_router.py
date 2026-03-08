@@ -14,8 +14,11 @@ from backend.utils.logger import logger
 
 router = APIRouter(prefix="/api/portfolio", tags=["Portfolio"])
 
+from pydantic import BaseModel, Field
+from backend.agent.schemas import TICKER_REGEX, TransactionResponse
+
 class TransactionCreate(BaseModel):
-    ticker: str
+    ticker: str = Field(..., pattern=TICKER_REGEX)
     type: str # 'BUY' or 'SELL'
     shares: float
     price: float
