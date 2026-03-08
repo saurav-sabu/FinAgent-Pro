@@ -20,9 +20,13 @@ class ErrorBoundary extends React.Component {
             return (
                 <div className="flex flex-col items-center justify-center p-8 m-4 rounded-xl border border-fin-red/30 bg-fin-red/5 min-h-[200px]">
                     <AlertTriangle className="w-12 h-12 text-fin-red mb-4 opacity-80" />
-                    <h2 className="text-lg font-bold text-fin-text mb-2">Component Crashed</h2>
+                    <h2 className="text-lg font-bold text-fin-text mb-2">
+                        {this.props.label ? `${this.props.label} is unavailable` : 'Component Crashed'}
+                    </h2>
                     <p className="text-sm text-fin-muted text-center max-w-md">
-                        This section of the dashboard encountered an unexpected error. The rest of the application remains functional.
+                        {this.props.compact
+                            ? 'Isolated crash — rest of the page is fine.'
+                            : 'This section of the dashboard encountered an unexpected error. The rest of the application remains functional.'}
                     </p>
                     <button
                         onClick={() => this.setState({ hasError: false, error: null })}
