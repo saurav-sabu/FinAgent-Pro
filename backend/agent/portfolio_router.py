@@ -11,6 +11,7 @@ from backend.database import get_db
 from backend.models import User, PortfolioItem, Transaction
 from backend.utils.auth import get_current_user
 from backend.utils.logger import logger
+import math
 
 router = APIRouter(prefix="/api/portfolio", tags=["Portfolio"])
 
@@ -126,10 +127,9 @@ async def get_portfolio_summary(
             try:
                 # yf.download with group_by='ticker' returns MultiIndex
                 price = float(data[ticker]["Close"].iloc[-1])
-                import math
                 if math.isnan(price):
                     price = item.average_cost
-            except:
+            except Exception:
                 price = item.average_cost # Fallback to cost if price fetch fails
                 
             current_market_value = item.shares * price

@@ -42,7 +42,6 @@ const Portfolio = () => {
     const fetchPortfolio = async () => {
         try {
             const summary = await marketAPI.getPortfolioSummary();
-            console.log("Portfolio summary fetched successfully:", summary);
             setData(summary);
         } catch (error) {
             console.error("Failed to fetch portfolio:", error);

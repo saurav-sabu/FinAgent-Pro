@@ -13,8 +13,13 @@ def ttl_cache(ttl_seconds: int = 300):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             # Create a deterministic hashable key
-            # Dictionaries and objects won't hash cleanly, so this simple version relies on primitive args natively tracking
-            key_items = tuple(args) + tuple(sorted(kwargs.items()))
+            # Filter out non-hashable arguments like Request objects
+            from starlette.requests import Request
+            
+            filtered_args = tuple(arg for arg in args if not isinstance(arg, Request))
+            filtered_kwargs = {k: v for k, v in kwargs.items() if not isinstance(v, Request)}
+            
+            key_items = filtered_args + tuple(sorted(filtered_kwargs.items()))
             
             # Use function name + args as cache key
             cache_key = f"{func.__name__}:{hash(key_items)}"

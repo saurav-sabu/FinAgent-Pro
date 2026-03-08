@@ -31,7 +31,7 @@ async def test_ticker_sanitization_failure(async_client: AsyncClient, auth_heade
     response = await async_client.get("/api/dashboard?ticker=INVALID-TICKER", headers=auth_headers)
     assert response.status_code == 422
 
-    assert "Too many login attempts" in response.text
+    assert "match pattern" in response.text
 
 @pytest.mark.asyncio
 async def test_refresh_token_flow(async_client: AsyncClient, test_user):

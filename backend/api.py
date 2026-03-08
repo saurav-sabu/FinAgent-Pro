@@ -49,6 +49,7 @@ async def lifespan(app: FastAPI):
     set_agent(agent_instance)
 
     logger.info("Initializing NeonDB (PostgreSQL) Database schema...")
+    logger.info(f"CORS Allowed Origins: {settings.ALLOWED_ORIGINS}")
     async with engine.begin() as conn:
         # Create all tables securely against the cloud instance
         await conn.run_sync(models.Base.metadata.create_all)

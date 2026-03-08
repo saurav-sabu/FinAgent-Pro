@@ -3,9 +3,6 @@ import pandas as pd
 from typing import Dict, List, Any
 import numpy as np
 
-import yfinance as yf
-import pandas as pd
-
 from backend.utils.logger import logger
 
 

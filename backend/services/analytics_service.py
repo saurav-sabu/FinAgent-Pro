@@ -3,8 +3,6 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, List
 import datetime
-import calendar
-import random
 import httpx
 
 from backend.utils.logger import logger
@@ -269,31 +267,5 @@ class AnalyticsService:
         sorted_data = dict(sorted(data.items(), key=lambda item: item[1], reverse=True))
         return sorted_data
 
-    @ttl_cache(ttl_seconds=3600)
-    async def get_sector_performance(self, region: str = "US") -> Dict[str, float]:
-        """
-        Fetch recent performance for standard regional Sector ETFs and Indices.
-        """
-        if region not in self.REGIONAL_SECTORS:
-            region = "US"
-            
-        sectors = self.REGIONAL_SECTORS[region]
-        data: Dict[str, float] = {}
-        
-        for name, symbol in sectors.items():
-            try:
-                stock = yf.Ticker(symbol)
-                hist = stock.history(period="5d")
-                if len(hist) >= 2:
-                    prev_close = hist["Close"].iloc[-2]
-                    current_close = hist["Close"].iloc[-1]
-                    change_pct = ((current_close - prev_close) / prev_close) * 100
-                    data[name] = round(change_pct, 2)
-            except Exception as e:
-                logger.warning(f"Failed to fetch sector {name} for {region}: {e}")
-                
-        # Sort sectors by highest percentage return
-        sorted_data = dict(sorted(data.items(), key=lambda item: item[1], reverse=True))
-        return sorted_data
 
 analytics_service = AnalyticsService()
