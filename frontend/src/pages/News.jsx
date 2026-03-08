@@ -3,6 +3,7 @@ import { Search, Newspaper, Loader2, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import NewsCard from '../components/NewsCard';
 import { marketAPI } from '../services/api';
+import { useToast } from '../context/ToastContext';
 
 const News = () => {
     const [symbol, setSymbol] = useState('');
@@ -11,6 +12,7 @@ const News = () => {
     const [news, setNews] = useState([]);
     const [loading, setLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
+    const { showToast } = useToast();
 
     const handleSearch = async (e, forceSymbol) => {
         if (e) e.preventDefault();
@@ -26,7 +28,7 @@ const News = () => {
             const result = await marketAPI.getNews(query, region);
             setNews(result || []);
         } catch (error) {
-            console.error("Failed to load news", error);
+            showToast("Failed to load news. Please try a different symbol or region.", "error");
             setNews([]);
         } finally {
             setLoading(false);

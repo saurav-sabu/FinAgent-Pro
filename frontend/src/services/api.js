@@ -10,6 +10,49 @@ const apiClient = axios.create({
     },
 });
 
+// Singleton for toast injection
+let showToastFn = null;
+export const injectToast = (fn) => {
+    showToastFn = fn;
+};
+
+// Retry Interceptor
+apiClient.interceptors.response.use(null, async (error) => {
+    const { config, response } = error;
+
+    // Only retry on network errors or 5xx server errors
+    const shouldRetry = !response || (response.status >= 500 && response.status <= 599);
+
+    if (shouldRetry && (!config._retryCount || config._retryCount < 3)) {
+        config._retryCount = (config._retryCount || 0) + 1;
+        const backoffDelay = config._retryCount * 1000 * Math.pow(2, config._retryCount - 1); // 1s, 2s, 4s
+
+        console.warn(`Retrying request (${config.url}) - Attempt ${config._retryCount} in ${backoffDelay}ms`);
+        await new Promise(resolve => setTimeout(resolve, backoffDelay));
+        return apiClient(config);
+    }
+
+    // Global Error Handling via Toasts
+    if (showToastFn && !config._noToast) {
+        let message = 'An unexpected error occurred. Please try again.';
+        if (!response) {
+            message = 'Connection failed. Please check your internet.';
+        } else if (response.status === 401) {
+            message = 'Session expired. Please login again.';
+        } else if (response.status === 403) {
+            message = 'Action unauthorized.';
+        } else if (response.status === 429) {
+            message = 'Too many requests. Please slow down.';
+        } else if (response.data?.detail) {
+            message = response.data.detail;
+        }
+
+        showToastFn(message, 'error');
+    }
+
+    return Promise.reject(error);
+});
+
 const USE_MOCK_DATA = false;
 
 // Token helpers for the AuthContext integration

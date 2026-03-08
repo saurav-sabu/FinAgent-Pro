@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, BookOpen, Calendar, Search } from 'lucide-react';
 import { marketAPI } from '../services/api';
 import useKeyPress from "../hooks/useKeyPress";
+import ErrorBoundary from '../components/ErrorBoundary';
 
 import TechnicalChart from '../components/TechnicalChart';
 import FundamentalPanel from '../components/FundamentalPanel';
@@ -102,9 +103,11 @@ const Analytics = () => {
                             transition={{ duration: 0.2 }}
                             className="h-full"
                         >
-                            <div className="h-full">
-                                <TechnicalChart ticker={activeTicker} />
-                            </div>
+                            <ErrorBoundary label="Technical Indicators" compact>
+                                <div className="h-full">
+                                    <TechnicalChart ticker={activeTicker} />
+                                </div>
+                            </ErrorBoundary>
                         </motion.div>
                     )}
 
@@ -117,9 +120,11 @@ const Analytics = () => {
                             transition={{ duration: 0.2 }}
                             className="h-full"
                         >
-                            <div className="h-full">
-                                <FundamentalPanel ticker={activeTicker} />
-                            </div>
+                            <ErrorBoundary label="Fundamental Data" compact>
+                                <div className="h-full">
+                                    <FundamentalPanel ticker={activeTicker} />
+                                </div>
+                            </ErrorBoundary>
                         </motion.div>
                     )}
 
@@ -132,9 +137,11 @@ const Analytics = () => {
                             transition={{ duration: 0.2 }}
                             className="h-full"
                         >
-                            <div className="h-full">
-                                <HeatmapPanel />
-                            </div>
+                            <ErrorBoundary label="Sector Heatmap" compact>
+                                <div className="h-full">
+                                    <HeatmapPanel />
+                                </div>
+                            </ErrorBoundary>
                         </motion.div>
                     )}
 
@@ -147,9 +154,11 @@ const Analytics = () => {
                             transition={{ duration: 0.2 }}
                             className="h-full"
                         >
-                            <div className="h-full">
-                                <CalendarPanel />
-                            </div>
+                            <ErrorBoundary label="Macro Events Calendar" compact>
+                                <div className="h-full">
+                                    <CalendarPanel />
+                                </div>
+                            </ErrorBoundary>
                         </motion.div>
                     )}
                 </AnimatePresence>

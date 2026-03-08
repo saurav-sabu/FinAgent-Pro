@@ -14,6 +14,7 @@ import {
     X,
     Info
 } from 'lucide-react';
+import { useToast } from '../context/ToastContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Chart } from 'react-chartjs-2';
@@ -33,6 +34,7 @@ const Portfolio = () => {
     const [review, setReview] = useState(null);
     const [reviewLoading, setReviewLoading] = useState(false);
     const [showReview, setShowReview] = useState(false);
+    const { showToast } = useToast();
 
     const fetchPortfolio = async () => {
         try {
@@ -57,7 +59,7 @@ const Portfolio = () => {
             const res = await marketAPI.getPortfolioReview();
             setReview(res.review);
         } catch (error) {
-            console.error("AI Review failed:", error);
+            showToast("Failed to generate AI review. Technical analysts are investigating.", "error");
             setReview("Failed to generate AI review. Technical analysts are investigating.");
         } finally {
             setReviewLoading(false);

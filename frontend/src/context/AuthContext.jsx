@@ -1,11 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { marketAPI } from '../services/api';
+import { useToast } from '../context/ToastContext';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { showToast } = useToast();
 
     useEffect(() => {
         const initAuth = async () => {
@@ -18,7 +20,7 @@ export const AuthProvider = ({ children }) => {
                     const userData = await marketAPI.getCurrentUser();
                     setUser(userData);
                 } catch (error) {
-                    console.error("Invalid or expired session:", error);
+                    showToast("Session expired. Please login again.", "info");
                     logout();
                 }
             }

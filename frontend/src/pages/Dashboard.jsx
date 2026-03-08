@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import ErrorBoundary from '../components/ErrorBoundary';
+import { useToast } from '../context/ToastContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Zap, CalendarDays, Search, Download, Image as ImageIcon, Star } from 'lucide-react';
 import IndexCard from '../components/IndexCard';
@@ -22,6 +24,7 @@ const Dashboard = () => {
 
     const [watchlist, setWatchlist] = useState([]);
     const [isWatchlistUpdating, setIsWatchlistUpdating] = useState(false);
+    const { showToast } = useToast();
 
     const chartRef = useRef(null);
 
@@ -66,8 +69,10 @@ const Dashboard = () => {
             await marketAPI.toggleWatchlist(data.stockDetails.ticker);
             const newList = await marketAPI.getWatchlist();
             setWatchlist(newList || []);
+            showToast(`${isWatching(data.stockDetails.ticker) ? 'Removed from' : 'Added to'} watchlist`, "success");
         } catch (e) {
-            console.error("Failed to toggle watchlist", e);
+            // Error is already handled by axios interceptor toast if it's an API error
+            // But we can add extra context here if needed
         } finally {
             setIsWatchlistUpdating(false);
         }
@@ -133,11 +138,13 @@ const Dashboard = () => {
             </div>
 
             {/* Indices Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
-                {(Array.isArray(data.indices) ? data.indices : Object.values(data.indices || {})).map((index, i) => (
-                    <IndexCard key={index.name} {...index} delay={i} />
-                ))}
-            </div>
+            <ErrorBoundary label="Market Indices" compact>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
+                    {(Array.isArray(data.indices) ? data.indices : Object.values(data.indices || {})).map((index, i) => (
+                        <IndexCard key={index.name} {...index} delay={i} />
+                    ))}
+                </div>
+            </ErrorBoundary>
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -221,15 +228,17 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        <div className="tour-chart w-full h-[350px] lg:h-[400px] relative z-10">
-                            <MainChart data={data.stockDetails} chartRef={chartRef} />
-                        </div>
-                        <div className="w-full h-[120px] relative z-10 mt-4 border-t border-fin-border/30 pt-4">
-                            <VolumeChart data={data.stockDetails} />
-                        </div>
-                        <div className="w-full h-[120px] relative z-10 mt-2 border-t border-fin-border/30 pt-4">
-                            <RsiChart data={data.stockDetails} />
-                        </div>
+                        <ErrorBoundary label="Stock Performance Charts" compact>
+                            <div className="tour-chart w-full h-[350px] lg:h-[400px] relative z-10">
+                                <MainChart data={data.stockDetails} chartRef={chartRef} />
+                            </div>
+                            <div className="w-full h-[120px] relative z-10 mt-4 border-t border-fin-border/30 pt-4">
+                                <VolumeChart data={data.stockDetails} />
+                            </div>
+                            <div className="w-full h-[120px] relative z-10 mt-2 border-t border-fin-border/30 pt-4">
+                                <RsiChart data={data.stockDetails} />
+                            </div>
+                        </ErrorBoundary>
                     </motion.div>
                 </div>
 
@@ -242,7 +251,9 @@ const Dashboard = () => {
                         transition={{ duration: 0.5, delay: 0.1 }}
                         className="tour-insight"
                     >
-                        <AiInsight ticker={data.stockDetails?.ticker || "AAPL"} />
+                        <ErrorBoundary label="AI Research Insight" compact>
+                            <AiInsight ticker={data.stockDetails?.ticker || "AAPL"} />
+                        </ErrorBoundary>
                     </motion.div>
 
                     {/* Risk Gauge */}
@@ -266,38 +277,40 @@ const Dashboard = () => {
                         transition={{ duration: 0.5, delay: 0.25 }}
                         className="glass-panel p-4 lg:p-5 border-fin-accent/20"
                     >
-                        <h2 className="text-base lg:text-lg font-bold mb-4 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Star className="w-4 h-4 text-fin-accent fill-fin-accent" />
-                                My Watchlist
-                            </div>
-                        </h2>
+                        <ErrorBoundary label="My Watchlist" compact>
+                            <h2 className="text-base lg:text-lg font-bold mb-4 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Star className="w-4 h-4 text-fin-accent fill-fin-accent" />
+                                    My Watchlist
+                                </div>
+                            </h2>
 
-                        {watchlist.length > 0 ? (
-                            <div className="space-y-2 lg:space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
-                                {watchlist.map((stock, i) => (
-                                    <div
-                                        key={stock.ticker}
-                                        onClick={() => setTicker(stock.ticker)}
-                                        className="group"
-                                    >
-                                        <StockCard
-                                            symbol={stock.ticker}
-                                            name="Watchlist"
-                                            price={`$${stock.price}`}
-                                            change={stock.change_percent}
-                                            volume="-"
-                                            delay={i}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-sm text-fin-muted text-center py-6 px-4 italic border border-dashed border-fin-border/50 rounded-lg bg-fin-bg/30">
-                                <Star className="w-8 h-8 mx-auto text-fin-border mb-2" />
-                                You haven't added any stocks yet. Click the <Star className="inline w-3 h-3 mx-1" /> icon next to a ticker to watch it!
-                            </div>
-                        )}
+                            {watchlist.length > 0 ? (
+                                <div className="space-y-2 lg:space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                                    {watchlist.map((stock, i) => (
+                                        <div
+                                            key={stock.ticker}
+                                            onClick={() => setTicker(stock.ticker)}
+                                            className="group"
+                                        >
+                                            <StockCard
+                                                symbol={stock.ticker}
+                                                name="Watchlist"
+                                                price={`$${stock.price}`}
+                                                change={stock.change_percent}
+                                                volume="-"
+                                                delay={i}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-sm text-fin-muted text-center py-6 px-4 italic border border-dashed border-fin-border/50 rounded-lg bg-fin-bg/30">
+                                    <Star className="w-8 h-8 mx-auto text-fin-border mb-2" />
+                                    You haven't added any stocks yet. Click the <Star className="inline w-3 h-3 mx-1" /> icon next to a ticker to watch it!
+                                </div>
+                            )}
+                        </ErrorBoundary>
                     </motion.div>
 
                     {/* Sector Heatmap */}
